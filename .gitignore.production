@@ -1,0 +1,262 @@
+# ============================================================================
+# Production .gitignore for Sky Education Portal
+# ============================================================================
+# 
+# This file contains additional entries that should be ignored in production
+# Append these to your existing .gitignore or use this as a reference
+# ============================================================================
+
+# Environment files (never commit production .env)
+.env
+.env.production
+.env.local
+.env.*.local
+
+# Production specific files
+/storage/*.key
+/vendor
+/node_modules
+/public/hot
+/public/storage
+/storage/app/public/*
+!/storage/app/public/.gitkeep
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Laravel specific
+/bootstrap/compiled.php
+/bootstrap/cache/*
+!/bootstrap/cache/.gitkeep
+/storage/debugbar/
+/storage/logs/*
+!/storage/logs/.gitkeep
+/storage/framework/cache/*
+!/storage/framework/cache/.gitkeep
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitkeep
+/storage/framework/views/*
+!/storage/framework/views/.gitkeep
+
+# Composer
+composer.phar
+composer.lock
+
+# NPM/Yarn
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+/public/mix-manifest.json
+
+# Production builds
+/public/build/*
+/public/js/*
+/public/css/*
+
+# Testing
+/coverage/
+.phpunit.result.cache
+.phpunit.cache
+
+# Deployment files
+deploy.log
+deployment.log
+
+# Backup files
+*.backup
+*.bak
+*.tmp
+/storage/backups/*
+!/storage/backups/.gitkeep
+
+# Database files (if using SQLite in development)
+*.sqlite
+*.sqlite3
+database.sqlite
+
+# Security files
+*.pem
+*.key
+*.crt
+*.csr
+
+# Production configuration backups
+config.backup
+*.conf.backup
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Local configuration overrides
+local.conf
+.local
+
+# Performance monitoring
+/storage/clockwork/
+/storage/telescope/
+
+# Cache files
+.cache/
+*.cache
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# Production specific logs
+/storage/logs/production.log
+/storage/logs/error.log
+access.log
+error.log
+
+# SSL certificates (if stored locally)
+/ssl/
+/certificates/
+
+# Monitoring and profiling
+/storage/app/profiling/
+/storage/app/monitoring/
+
+# File uploads (depending on your strategy)
+/storage/app/uploads/*
+!/storage/app/uploads/.gitkeep
+
+# Server configuration files (if stored in repo)
+.htaccess.production
+nginx.conf.production
+apache.conf.production
+
+# Maintenance mode
+/storage/framework/down
+
+# Laravel Sanctum
+sanctum.key
+
+# Laravel Passport (if using)
+oauth-private.key
+oauth-public.key
+
+# Application specific uploads
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# Documentation builds
+/docs/build/
+/docs/dist/
+
+# Vim files
+*.swp
+*.swo
+
+# Emacs files
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# PhpStorm/IntelliJ
+.idea/
+
+# Netbeans
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Local History for Visual Studio Code
+.history/
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Icon must end with two \r
+Icon
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk

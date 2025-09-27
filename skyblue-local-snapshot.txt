@@ -1,0 +1,229 @@
+=== GIT ===
+80b570d
+
+=== PHP ===
+PHP 8.4.12 (cli) (built: Aug 26 2025 13:36:28) (NTS)
+Copyright (c) The PHP Group
+Built by Homebrew
+Zend Engine v4.4.12, Copyright (c) Zend Technologies
+    with Zend OPcache v8.4.12, Copyright (c), by Zend Technologies
+
+=== PHP modules ===
+
+
+Core
+FFI
+PDO
+PDO_ODBC
+Phar
+Reflection
+SPL
+SimpleXML
+Zend OPcache
+Zend OPcache
+[PHP Modules]
+[Zend Modules]
+bcmath
+bz2
+calendar
+ctype
+curl
+date
+dba
+dom
+exif
+fileinfo
+filter
+ftp
+gd
+gettext
+gmp
+hash
+iconv
+intl
+json
+ldap
+libxml
+mbstring
+mysqli
+mysqlnd
+odbc
+openssl
+pcntl
+pcre
+pdo_dblib
+pdo_mysql
+pdo_pgsql
+pdo_sqlite
+pgsql
+posix
+random
+readline
+session
+shmop
+snmp
+soap
+sockets
+sodium
+sqlite3
+standard
+sysvmsg
+sysvsem
+sysvshm
+tidy
+tokenizer
+xml
+xmlreader
+xmlwriter
+xsl
+zip
+zlib
+
+=== Laravel about ===
+
+  Environment .................................................................................................................  
+  Application Name .................................................................................................... Laravel  
+  Laravel Version ..................................................................................................... 12.31.1  
+  PHP Version .......................................................................................................... 8.4.12  
+  Composer Version ..................................................................................................... 2.8.11  
+  Environment ........................................................................................................... local  
+  Debug Mode .......................................................................................................... ENABLED  
+  URL ................................................................................................................ sky.test  
+  Maintenance Mode ........................................................................................................ OFF  
+  Timezone ................................................................................................................ UTC  
+  Locale ................................................................................................................... en  
+
+  Cache .......................................................................................................................  
+  Config ........................................................................................................... NOT CACHED  
+  Events ........................................................................................................... NOT CACHED  
+  Routes ........................................................................................................... NOT CACHED  
+  Views ................................................................................................................ CACHED  
+
+  Drivers .....................................................................................................................  
+  Broadcasting ............................................................................................................ log  
+  Cache .............................................................................................................. database  
+  Database ............................................................................................................. sqlite  
+  Logs ......................................................................................................... stack / single  
+  Mail .................................................................................................................... log  
+  Queue .............................................................................................................. database  
+  Session ............................................................................................................ database  
+
+  Storage .....................................................................................................................  
+  public/storage ....................................................................................................... LINKED  
+
+  Filament ....................................................................................................................  
+  Blade Icons ...................................................................................................... NOT CACHED  
+  Packages .............................. filament, forms, notifications, support, tables, actions, infolists, schemas, widgets  
+  Panel Components ................................................................................................. NOT CACHED  
+  Version ............................................................................................................. v4.0.20  
+  Views ......................................................................................................... NOT PUBLISHED  
+
+  Livewire ....................................................................................................................  
+  Livewire ............................................................................................................. v3.6.4  
+
+
+=== Node & npm ===
+v24.8.0
+11.6.0
+
+=== Build tool ===
+vite.config.js present
+public/build/manifest.json present
+
+=== .env (sanitized) ===
+APP_ENV=local
+APP_URL=http://sky.test
+DB_CONNECTION=sqlite
+SESSION_DRIVER=database
+SESSION_DOMAIN=null
+QUEUE_CONNECTION=database
+APP_URL=http://sky.test
+
+=== composer.json (require) ===
+    "require": {
+        "php": "^8.2",
+        "dompdf/dompdf": "^3.1",
+        "filament/filament": "^4.0",
+        "laravel/framework": "^12.0",
+        "laravel/tinker": "^2.10.1"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.23",
+        "laravel/boost": "^1.2",
+        "laravel/pail": "^1.2.2",
+        "laravel/pint": "^1.24",
+        "laravel/sail": "^1.41",
+        "mockery/mockery": "^1.6",
+        "nunomaduro/collision": "^8.6",
+        "phpunit/phpunit": "^11.5.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi",
+            "@php artisan filament:upgrade"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi",
+            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
+            "@php artisan migrate --graceful --ansi"
+        ],
+        "dev": [
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite --kill-others"
+        ],
+        "test": [
+            "@php artisan config:clear --ansi",
+            "@php artisan test"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
+
+=== package.json (name & scripts) ===
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.0.0",
+        "axios": "^1.11.0",
+        "concurrently": "^9.0.1",
+        "laravel-vite-plugin": "^2.0.0",
+        "tailwindcss": "^4.0.0",
+        "vite": "^7.0.4"
+    }
+}

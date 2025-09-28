@@ -37,17 +37,19 @@ class CommissionEarned extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('🎉 Commission Earned!')
+            ->subject('🎉 Commission Earned - $' . number_format($this->commission->amount, 2))
             ->greeting("Congratulations {$notifiable->name}!")
-            ->line('You have earned a new commission!')
-            ->line("**Amount:** $" . number_format($this->commission->amount, 2))
-            ->line("**Application:** {$this->commission->application->application_number}")
-            ->line("**Student:** {$this->commission->application->student->name}")
-            ->line("**Program:** {$this->commission->application->program->name}")
-            ->line("**University:** {$this->commission->application->program->university->name}")
-            ->line('This commission will be included in your next payout.')
-            ->action('View Commission Details', route('filament.agent.resources.commissions.index'))
-            ->line('Keep up the great work!');
+            ->line('You have earned a new commission for a successful application!')
+            ->line("**💰 Commission Amount:** $" . number_format($this->commission->amount, 2))
+            ->line("**📋 Application:** {$this->commission->application->application_number}")
+            ->line("**👤 Student:** {$this->commission->application->student->name}")
+            ->line("**🎓 Program:** {$this->commission->application->program->name}")
+            ->line("**🏫 University:** {$this->commission->application->program->university->name}")
+            ->line("**📅 Earned Date:** {$this->commission->created_at->format('M j, Y \a\t g:i A')}")
+            ->line('This commission will be included in your next payout request.')
+            ->line('💡 **Tip:** You can request a payout when your total earnings reach your minimum threshold.')
+            ->action('View All Commissions', route('filament.agent.resources.commissions.index'))
+            ->line('Keep up the excellent work! 🚀');
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Notifications\ApplicationStatusChanged;
 use App\Notifications\CommissionEarned;
 use App\Notifications\ApplicationAssigned;
+use App\Notifications\StudentApplicationSubmitted;
 use App\Services\WalletService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
@@ -19,7 +20,19 @@ class ApplicationObserver
      */
     public function created(Application $application): void
     {
-        //
+        // Send notification to the agent when a new application is submitted
+        try {
+            $application->load(['student.agent', 'program.university']);
+            
+            if ($application->student && $application->student->agent) {
+                $application->student->agent->notify(
+                    new StudentApplicationSubmitted($application)
+                );
+                Log::info("New application notification sent to agent for Application [{$application->application_number}].");
+            }
+        } catch (\Exception $e) {
+            Log::error("Failed to send new application notification for Application [{$application->application_number}]: " . $e->getMessage());
+        }
     }
 
     /**

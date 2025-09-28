@@ -23,8 +23,12 @@ class AdminAdvancedStats extends StatsOverviewWidget
         // Average processing time (Database agnostic)
         $avgProcessingTime = Application::whereNotNull('decision_at')
             ->whereNotNull('submitted_at')
-            ->selectRaw('AVG(DATEDIFF(decision_at, submitted_at)) as avg_days')
-            ->value('avg_days');
+            ->get()
+            ->map(function ($application) {
+                return \Carbon\Carbon::parse($application->decision_at)
+                    ->diffInDays(\Carbon\Carbon::parse($application->submitted_at));
+            })
+            ->average();
         $avgProcessingTime = $avgProcessingTime ? round($avgProcessingTime, 1) : 0;
 
         // Revenue growth this month vs last month

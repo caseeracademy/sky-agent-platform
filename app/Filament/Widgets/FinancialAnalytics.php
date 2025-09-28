@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Commission;
+use App\Models\Payout;
 use Filament\Widgets\ChartWidget;
 
 class FinancialAnalytics extends ChartWidget
@@ -34,15 +35,15 @@ class FinancialAnalytics extends ChartWidget
                 ->sum('amount');
             $totalCommissions[] = $monthTotal;
             
-            // Paid commissions this month
-            $monthPaid = Commission::where('status', 'paid')
+            // Paid payouts this month
+            $monthPaid = Payout::where('status', 'paid')
                 ->whereMonth('created_at', $date->month)
                 ->whereYear('created_at', $date->year)
                 ->sum('amount');
             $paidCommissions[] = $monthPaid;
             
-            // Pending commissions this month
-            $monthPending = Commission::where('status', 'pending')
+            // Pending payouts this month
+            $monthPending = Payout::where('status', 'pending')
                 ->whereMonth('created_at', $date->month)
                 ->whereYear('created_at', $date->year)
                 ->sum('amount');
@@ -61,7 +62,7 @@ class FinancialAnalytics extends ChartWidget
                     'tension' => 0.4,
                 ],
                 [
-                    'label' => 'Paid Commissions',
+                    'label' => 'Paid Payouts',
                     'data' => $paidCommissions,
                     'backgroundColor' => 'rgba(34, 197, 94, 0.1)',
                     'borderColor' => 'rgba(34, 197, 94, 1)',
@@ -70,7 +71,7 @@ class FinancialAnalytics extends ChartWidget
                     'tension' => 0.4,
                 ],
                 [
-                    'label' => 'Pending Commissions',
+                    'label' => 'Pending Payouts',
                     'data' => $pendingCommissions,
                     'backgroundColor' => 'rgba(245, 158, 11, 0.1)',
                     'borderColor' => 'rgba(245, 158, 11, 1)',

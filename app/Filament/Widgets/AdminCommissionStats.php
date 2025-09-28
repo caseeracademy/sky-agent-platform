@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Commission;
+use App\Models\Payout;
 use App\Models\User;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -20,7 +21,7 @@ class AdminCommissionStats extends StatsOverviewWidget
             ->sum('amount');
         
         // Pending payments
-        $pendingPayments = Commission::where('status', 'pending')
+        $pendingPayments = Payout::where('status', 'pending')
             ->sum('amount');
         
         // Active agents count

@@ -20,12 +20,12 @@ class TestMultiStepPayout extends Command
         $this->call('migrate:fresh');
         // Manually create what we need
         $agent = User::factory()->create(['role' => 'agent_owner', 'email' => 'agent.owner@sky.com']);
-        Commission::factory()->create(['agent_id' => $agent->id, 'amount' => 100, 'status' => 'earned']);
-        Commission::factory()->create(['agent_id' => $agent->id, 'amount' => 100, 'status' => 'earned']);
+        Commission::factory()->create(['agent_id' => $agent->id, 'amount' => 100]);
+        Commission::factory()->create(['agent_id' => $agent->id, 'amount' => 100]);
         $this->info('Step 1: Database has been reset. Agent has 2x$100 commissions.');
 
         // 2. Initial State
-        $totalEarned = $agent->commissions()->where('status', 'earned')->sum('amount');
+        $totalEarned = $agent->commissions()->sum('amount');
         $this->line("Step 2: Initial State - Total Earned = \${$totalEarned}, Available Balance = \${$totalEarned}");
         $this->newLine();
 

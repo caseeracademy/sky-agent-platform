@@ -8,7 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 25%, #667eea 50%, #764ba2 75%, #f093fb 100%);
             background-size: 400% 400%;
             animation: gradientShift 8s ease infinite;
         }
@@ -51,6 +51,12 @@
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
+        .text-shadow {
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .hero-text {
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -79,20 +85,22 @@
     </nav>
 
     <!-- Hero Section -->
-    <section class="gradient-bg hero-pattern py-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-5xl md:text-6xl font-bold text-white mb-6">
+    <section class="gradient-bg hero-pattern py-20 relative">
+        <!-- Dark overlay for better text contrast -->
+        <div class="absolute inset-0 bg-black/20"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <h1 class="text-5xl md:text-6xl font-bold text-white mb-6 hero-text">
                 Sky Agent Platform
             </h1>
-            <p class="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto">
+            <p class="text-xl md:text-2xl text-white mb-8 max-w-3xl mx-auto text-shadow">
                 Streamline student application management with our comprehensive platform designed for educational agents and administrators.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="/admin" class="bg-white text-indigo-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition duration-300 inline-flex items-center justify-center">
+                <a href="/admin" class="bg-white text-indigo-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition duration-300 inline-flex items-center justify-center shadow-lg hover:shadow-xl">
                     <i class="fas fa-user-shield mr-2"></i>
                     Admin Dashboard
                 </a>
-                <a href="/agent" class="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-indigo-600 transition duration-300 inline-flex items-center justify-center">
+                <a href="/agent" class="bg-white/20 backdrop-blur-sm border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-indigo-600 transition duration-300 inline-flex items-center justify-center shadow-lg hover:shadow-xl">
                     <i class="fas fa-users mr-2"></i>
                     Agent Portal
                 </a>

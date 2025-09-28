@@ -66,6 +66,31 @@ A comprehensive Laravel application for managing student recruitment through a n
    php artisan serve
    ```
 
+### Docker Deployment
+
+For easy deployment with Docker:
+
+```bash
+# Start all services
+docker-compose up -d
+
+# Install dependencies
+docker-compose exec app composer install
+docker-compose exec app npm install
+docker-compose exec app npm run build
+
+# Setup database
+docker-compose exec app php artisan migrate
+docker-compose exec app php artisan db:seed
+
+# Set permissions
+docker-compose exec app chown -R www-data:www-data storage bootstrap/cache
+```
+
+### Production Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed production deployment instructions.
+
 ## Default Access
 
 - **Admin Panel**: `/admin`

@@ -20,10 +20,10 @@ class AdminAdvancedStats extends StatsOverviewWidget
         $approvedApplications = Application::where('status', 'approved')->count();
         $conversionRate = $totalApplications > 0 ? round(($approvedApplications / $totalApplications) * 100, 1) : 0;
 
-        // Average processing time (SQLite compatible)
+        // Average processing time (Database agnostic)
         $avgProcessingTime = Application::whereNotNull('decision_at')
             ->whereNotNull('submitted_at')
-            ->selectRaw('AVG(julianday(decision_at) - julianday(submitted_at)) as avg_days')
+            ->selectRaw('AVG(DATEDIFF(decision_at, submitted_at)) as avg_days')
             ->value('avg_days');
         $avgProcessingTime = $avgProcessingTime ? round($avgProcessingTime, 1) : 0;
 

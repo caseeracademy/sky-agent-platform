@@ -40,59 +40,56 @@ sudo mysql_secure_installation
 
 #### 2. Application Deployment
 
+**Step-by-step deployment process:**
+
 ```bash
-# Clone repository
+# 1. Clone repository
 git clone https://github.com/caseeracademy/sky-agent-platform.git
 cd sky-agent-platform
 
-# Install dependencies
-composer install --no-dev --optimize-autoloader
+# 2. Install PHP dependencies
+composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+
+# 3. Install Node.js dependencies
 npm install
 
-# CRITICAL: Build assets for production (fixes CSS loading issues)
+# 4. CRITICAL: Build assets for production (fixes CSS loading issues)
 npm run build
 
-# Environment setup
+# 5. Environment setup
 cp .env.example .env
 php artisan key:generate
 
-# Database setup
+# 6. Database setup
 php artisan migrate --force
 php artisan db:seed --force
 
-# Set permissions (CRITICAL for production)
+# 7. Set permissions (CRITICAL for production)
 sudo chown -R www-data:www-data storage bootstrap/cache public/build
 sudo chmod -R 775 storage bootstrap/cache
 sudo chmod -R 755 public/build
 
-# Optimize for production
+# 8. Optimize for production
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 ```
 
-#### 2.1. Quick Production Deployment (Recommended)
+#### 2.1. Fix Permission Issues
 
-Use the provided deployment script:
-
-```bash
-# Make script executable
-chmod +x deploy-production.sh
-
-# Run production deployment
-./deploy-production.sh
-```
-
-#### 2.2. Diagnose Production Issues
-
-If you encounter issues, use the diagnostic script:
+If you need to edit files without sudo:
 
 ```bash
-# Make script executable
-chmod +x diagnose-production.sh
+# Fix ownership to your user
+sudo chown -R ubuntu:ubuntu /var/www/sky-agent-platform
 
-# Run diagnostics
-./diagnose-production.sh
+# Set proper permissions
+find /var/www/sky-agent-platform -type d -exec chmod 755 {} \;
+find /var/www/sky-agent-platform -type f -exec chmod 644 {} \;
+
+# Set Laravel-specific permissions
+sudo chown -R ubuntu:www-data storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache
 ```
 
 #### 3. Web Server Configuration
@@ -261,6 +258,29 @@ php artisan view:cache
    
    # Check middleware logs
    tail -f storage/logs/laravel.log
+   ```
+
+3. **Database Function Errors (julianday, etc.):**
+   ```bash
+   # These errors occur when using SQLite-specific functions on MySQL
+   # The code has been fixed to use MySQL-compatible functions
+   # If you still get errors, check your database configuration
+   php artisan config:show database
+   ```
+
+4. **Missing Database Columns:**
+   ```bash
+   # Check if all migrations have been run
+   php artisan migrate:status
+   
+   # Run any pending migrations
+   php artisan migrate --force
+   
+   # If specific columns are missing, add them manually
+   php artisan tinker --execute="
+   use Illuminate\Support\Facades\DB;
+   DB::statement('ALTER TABLE commissions ADD COLUMN status ENUM(\"pending\", \"paid\", \"cancelled\") DEFAULT \"pending\" AFTER amount');
+   "
    ```
 
 3. **Permission Errors:**

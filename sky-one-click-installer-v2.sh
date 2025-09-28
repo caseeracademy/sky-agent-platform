@@ -616,6 +616,7 @@ troubleshoot_composer() {
         print_error "Composer not found in PATH"
         return 1
     fi
+    print_debug "Composer found in PATH"
     
     # Check composer version
     COMPOSER_VERSION=$(composer --version 2>/dev/null | head -n1)
@@ -624,8 +625,11 @@ troubleshoot_composer() {
     # Check if we're in the right directory
     if [ ! -f "composer.json" ]; then
         print_error "composer.json not found in current directory: $(pwd)"
+        print_status "Directory contents:"
+        ls -la | head -10
         return 1
     fi
+    print_debug "composer.json found"
     
     # Check file permissions
     if [ ! -r "composer.json" ]; then
@@ -634,6 +638,7 @@ troubleshoot_composer() {
         ls -la composer.json
         return 1
     fi
+    print_debug "composer.json is readable"
     
     # Check if vendor directory is writable
     if [ -d "vendor" ] && [ ! -w "vendor" ]; then
@@ -643,9 +648,18 @@ troubleshoot_composer() {
     fi
     
     # Check PHP memory limit
-    PHP_MEMORY=$(php -r "echo ini_get('memory_limit');")
+    PHP_MEMORY=$(php -r "echo ini_get('memory_limit');" 2>/dev/null)
     print_debug "PHP memory limit: $PHP_MEMORY"
     
+    # Check internet connectivity for Composer
+    print_debug "Testing Composer connectivity..."
+    if composer config --list | grep -q "repositories.packagist.org"; then
+        print_debug "Composer repositories configured"
+    else
+        print_warning "Composer repositories may not be configured properly"
+    fi
+    
+    print_success "Composer troubleshooting completed"
     return 0
 }
 
@@ -723,12 +737,47 @@ deploy_application() {
         return 1
     fi
     
-    # Run composer install with proper error handling
-    if sudo -u $APP_USER composer install --no-dev --optimize-autoloader --no-interaction; then
+    # Run composer install with proper error handling and timeout
+    print_status "Installing Composer dependencies (this may take several minutes)..."
+    print_debug "Running: sudo -u $APP_USER composer install --no-dev --optimize-autoloader --no-interaction"
+    
+    # Set a timeout for Composer installation (15 minutes)
+    timeout 900 sudo -u $APP_USER composer install --no-dev --optimize-autoloader --no-interaction &
+    COMPOSER_PID=$!
+    
+    # Show progress while Composer is running
+    while kill -0 $COMPOSER_PID 2>/dev/null; do
+        print_debug "Composer installation in progress... (PID: $COMPOSER_PID)"
+        sleep 10
+    done
+    
+    # Wait for the process to complete and check exit status
+    wait $COMPOSER_PID
+    COMPOSER_EXIT_CODE=$?
+    
+    if [ $COMPOSER_EXIT_CODE -eq 0 ]; then
         print_success "Composer dependencies installed successfully"
         print_debug "Composer dependencies installed"
+    elif [ $COMPOSER_EXIT_CODE -eq 124 ]; then
+        print_error "Composer installation timed out after 15 minutes"
+        print_status "Trying alternative approach..."
+        
+        # Try with different user context and shorter timeout
+        timeout 600 composer install --no-dev --optimize-autoloader --no-interaction
+        if [ $? -eq 0 ]; then
+            print_success "Composer dependencies installed with root user"
+            chown -R $APP_USER:www-data vendor composer.lock
+        else
+            print_error "Composer installation failed completely"
+            print_status "Manual troubleshooting required:"
+            print_status "1. Check if composer.json exists and is readable"
+            print_status "2. Check PHP memory limit (may need to increase)"
+            print_status "3. Check internet connectivity"
+            print_status "4. Try running: composer install --verbose"
+            return 1
+        fi
     else
-        print_error "Failed to install Composer dependencies with application user"
+        print_error "Failed to install Composer dependencies with application user (exit code: $COMPOSER_EXIT_CODE)"
         print_status "Trying alternative approach..."
         
         # Try with different user context

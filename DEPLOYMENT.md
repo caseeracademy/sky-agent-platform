@@ -48,6 +48,8 @@ cd sky-agent-platform
 # Install dependencies
 composer install --no-dev --optimize-autoloader
 npm install
+
+# CRITICAL: Build assets for production (fixes CSS loading issues)
 npm run build
 
 # Environment setup
@@ -58,14 +60,39 @@ php artisan key:generate
 php artisan migrate --force
 php artisan db:seed --force
 
-# Set permissions
-sudo chown -R www-data:www-data storage bootstrap/cache
+# Set permissions (CRITICAL for production)
+sudo chown -R www-data:www-data storage bootstrap/cache public/build
 sudo chmod -R 775 storage bootstrap/cache
+sudo chmod -R 755 public/build
 
 # Optimize for production
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+```
+
+#### 2.1. Quick Production Deployment (Recommended)
+
+Use the provided deployment script:
+
+```bash
+# Make script executable
+chmod +x deploy-production.sh
+
+# Run production deployment
+./deploy-production.sh
+```
+
+#### 2.2. Diagnose Production Issues
+
+If you encounter issues, use the diagnostic script:
+
+```bash
+# Make script executable
+chmod +x diagnose-production.sh
+
+# Run diagnostics
+./diagnose-production.sh
 ```
 
 #### 3. Web Server Configuration
@@ -203,30 +230,88 @@ php artisan view:cache
 
 ### Troubleshooting
 
-**Common Issues:**
+**Common Production Issues:**
 
-1. **Permission Errors:**
+1. **CSS Not Loading (Homepage loses styling):**
    ```bash
-   sudo chown -R www-data:www-data storage bootstrap/cache
-   sudo chmod -R 775 storage bootstrap/cache
+   # Build assets for production
+   npm run build
+   
+   # Check if manifest exists
+   ls -la public/build/manifest.json
+   
+   # Verify assets are accessible
+   curl -I http://yoursite.com/build/manifest.json
    ```
 
-2. **Composer Memory Issues:**
+2. **403 Forbidden on /admin or /agent routes:**
+   ```bash
+   # Check user roles in database
+   php artisan tinker --execute="App\Models\User::all(['name', 'role']);"
+   
+   # Create super admin if missing
+   php artisan tinker --execute="
+   App\Models\User::create([
+       'name' => 'Super Admin',
+       'email' => 'admin@example.com',
+       'password' => bcrypt('password'),
+       'role' => 'super_admin'
+   ]);
+   "
+   
+   # Check middleware logs
+   tail -f storage/logs/laravel.log
+   ```
+
+3. **Permission Errors:**
+   ```bash
+   sudo chown -R www-data:www-data storage bootstrap/cache public/build
+   sudo chmod -R 775 storage bootstrap/cache
+   sudo chmod -R 755 public/build
+   ```
+
+4. **Composer Memory Issues:**
    ```bash
    php -d memory_limit=-1 /usr/local/bin/composer install
    ```
 
-3. **Database Connection:**
+5. **Database Connection:**
    ```bash
    php artisan config:clear
    php artisan cache:clear
    ```
 
-4. **Asset Issues:**
+6. **Asset Issues:**
    ```bash
    npm run build
    php artisan view:clear
    ```
+
+7. **Session Issues:**
+   ```bash
+   # Check session configuration
+   php artisan config:show session
+   
+   # Clear session files
+   rm -rf storage/framework/sessions/*
+   ```
+
+**Diagnostic Commands:**
+
+```bash
+# Run full diagnostic
+./diagnose-production.sh
+
+# Check specific issues
+php artisan route:list | grep admin
+php artisan route:list | grep agent
+
+# Test database connection
+php artisan migrate:status
+
+# Check user roles
+php artisan tinker --execute="App\Models\User::all(['name', 'email', 'role']);"
+```
 
 ### Support
 

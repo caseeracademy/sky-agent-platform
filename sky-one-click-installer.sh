@@ -491,7 +491,40 @@ deploy_application() {
     
     cd $DEPLOY_PATH
     
+    # Handle existing directory
+    if [ -d ".git" ] || [ -f "composer.json" ]; then
+        print_warning "Application directory already contains files."
+        print_status "Options:"
+        echo "1. Remove existing files and reinstall (recommended)"
+        echo "2. Skip application deployment"
+        echo "3. Exit installation"
+        read -p "Choose option (1-3): " choice
+        
+        case $choice in
+            1)
+                print_status "Removing existing files..."
+                rm -rf .git
+                rm -rf *
+                rm -rf .*
+                print_success "Existing files removed"
+                ;;
+            2)
+                print_warning "Skipping application deployment"
+                return 0
+                ;;
+            3)
+                print_error "Installation cancelled by user"
+                exit 1
+                ;;
+            *)
+                print_error "Invalid choice. Exiting."
+                exit 1
+                ;;
+        esac
+    fi
+    
     # Clone repository
+    print_status "Cloning repository..."
     sudo -u $APP_USER git clone $REPO_URL .
     
     # Install PHP dependencies
@@ -500,7 +533,23 @@ deploy_application() {
     
     # Set up environment
     print_status "Setting up environment..."
-    sudo -u $APP_USER cp .env.production.example .env
+    
+    # Check for environment template files
+    if [ -f ".env.production.example" ]; then
+        sudo -u $APP_USER cp .env.production.example .env
+        print_debug "Using .env.production.example"
+    elif [ -f "env.production.example" ]; then
+        sudo -u $APP_USER cp env.production.example .env
+        print_debug "Using env.production.example"
+    elif [ -f ".env.example" ]; then
+        sudo -u $APP_USER cp .env.example .env
+        print_debug "Using .env.example"
+    else
+        print_error "No environment template file found!"
+        print_status "Available files:"
+        ls -la | grep -E "\.(env|example)"
+        return 1
+    fi
     
     # Update .env with database credentials
     sudo -u $APP_USER sed -i "s/DB_DATABASE=.*/DB_DATABASE=$DB_NAME/" .env

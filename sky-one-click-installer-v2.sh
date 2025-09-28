@@ -59,12 +59,39 @@ USER_CREATED=false
 COMPOSER_INSTALLED=false
 NODEJS_INSTALLED=false
 
+# Progress tracking
+TOTAL_STEPS=12
+CURRENT_STEP=0
+
 print_status() { echo -e "${BLUE}[INFO]${NC} $1" | tee -a $LOG_FILE; }
 print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1" | tee -a $LOG_FILE; }
 print_warning() { echo -e "${YELLOW}[WARNING]${NC} $1" | tee -a $LOG_FILE; }
 print_error() { echo -e "${RED}[ERROR]${NC} $1" | tee -a $LOG_FILE; }
 print_debug() { echo -e "${PURPLE}[DEBUG]${NC} $1" | tee -a $LOG_FILE; }
-print_step() { echo -e "${CYAN}[STEP]${NC} $1" | tee -a $LOG_FILE; }
+print_step() { 
+    CURRENT_STEP=$((CURRENT_STEP + 1))
+    PERCENTAGE=$((CURRENT_STEP * 100 / TOTAL_STEPS))
+    echo ""
+    echo "==============================================================================="
+    echo -e "${CYAN}[STEP $CURRENT_STEP/$TOTAL_STEPS - ${PERCENTAGE}%]${NC} $1"
+    echo "==============================================================================="
+    echo "" | tee -a $LOG_FILE
+}
+
+# Progress bar function
+show_progress() {
+    local current=$1
+    local total=$2
+    local desc=$3
+    local percent=$((current * 100 / total))
+    local filled=$((percent / 2))
+    local empty=$((50 - filled))
+    
+    printf "\r${BLUE}[%3d%%]${NC} %s [" $percent "$desc"
+    printf "%*s" $filled | tr ' ' '█'
+    printf "%*s" $empty | tr ' ' '░'
+    printf "] %d/%d" $current $total
+}
 
 # Create log file and setup
 setup_logging() {
@@ -586,7 +613,40 @@ deploy_application() {
     
     cd $DEPLOY_PATH
     
+    # Handle existing directory
+    if [ -d ".git" ] || [ -f "composer.json" ]; then
+        print_warning "Application directory already contains files."
+        print_status "Options:"
+        echo "1. Remove existing files and reinstall (recommended)"
+        echo "2. Skip application deployment"
+        echo "3. Exit installation"
+        read -p "Choose option (1-3): " choice
+        
+        case $choice in
+            1)
+                print_status "Removing existing files..."
+                rm -rf .git
+                rm -rf *
+                rm -rf .*
+                print_success "Existing files removed"
+                ;;
+            2)
+                print_warning "Skipping application deployment"
+                return 0
+                ;;
+            3)
+                print_error "Installation cancelled by user"
+                exit 1
+                ;;
+            *)
+                print_error "Invalid choice. Exiting."
+                exit 1
+                ;;
+        esac
+    fi
+    
     # Clone repository
+    print_status "Cloning repository..."
     sudo -u $APP_USER git clone $REPO_URL .
     print_debug "Repository cloned successfully"
     
@@ -597,7 +657,23 @@ deploy_application() {
     
     # Set up environment
     print_status "Setting up environment..."
-    sudo -u $APP_USER cp .env.production.example .env
+    
+    # Check for environment template files
+    if [ -f ".env.production.example" ]; then
+        sudo -u $APP_USER cp .env.production.example .env
+        print_debug "Using .env.production.example"
+    elif [ -f "env.production.example" ]; then
+        sudo -u $APP_USER cp env.production.example .env
+        print_debug "Using env.production.example"
+    elif [ -f ".env.example" ]; then
+        sudo -u $APP_USER cp .env.example .env
+        print_debug "Using .env.example"
+    else
+        print_error "No environment template file found!"
+        print_status "Available files:"
+        ls -la | grep -E "\.(env|example)"
+        return 1
+    fi
     
     # Update .env with database credentials
     sudo -u $APP_USER sed -i "s/DB_DATABASE=.*/DB_DATABASE=$DB_NAME/" .env
@@ -861,28 +937,63 @@ try {
 
 # Main installation function
 main() {
-    print_status "🚀 Starting Sky Education Portal installation v2.0..."
+    echo ""
+    echo "🚀 ==============================================================================="
+    echo "🚀                    SKY EDUCATION PORTAL INSTALLER v2.0"
+    echo "🚀 ==============================================================================="
+    echo ""
+    print_status "Starting installation process..."
     print_status "Installation log: $LOG_FILE"
+    print_status "Total steps: $TOTAL_STEPS"
+    echo ""
     
     INSTALLATION_STARTED=true
     
-    # Run all installation steps in correct order
+    # Run all installation steps in correct order with progress tracking
     setup_logging
+    show_progress 1 $TOTAL_STEPS "Setup logging"
+    
     pre_flight_checks
+    show_progress 2 $TOTAL_STEPS "Pre-flight checks"
+    
     create_application_user  # CREATE USER FIRST!
+    show_progress 3 $TOTAL_STEPS "Create application user"
+    
     install_system_packages
+    show_progress 4 $TOTAL_STEPS "Install system packages"
+    
     install_php
+    show_progress 5 $TOTAL_STEPS "Install PHP 8.3"
+    
     install_composer
+    show_progress 6 $TOTAL_STEPS "Install Composer"
+    
     install_nodejs
+    show_progress 7 $TOTAL_STEPS "Install Node.js"
+    
     install_nginx
+    show_progress 8 $TOTAL_STEPS "Install Nginx"
+    
     install_mysql
+    show_progress 9 $TOTAL_STEPS "Install MySQL"
+    
     setup_database
+    show_progress 10 $TOTAL_STEPS "Setup database"
+    
     deploy_application
+    show_progress 11 $TOTAL_STEPS "Deploy application"
+    
     configure_nginx
+    show_progress 12 $TOTAL_STEPS "Configure Nginx"
+    
     install_ssl
     create_admin_user
     setup_monitoring
     health_check
+    
+    echo ""
+    show_progress $TOTAL_STEPS $TOTAL_STEPS "Installation completed"
+    echo ""
     
     print_success "🎉 Installation completed successfully!"
     

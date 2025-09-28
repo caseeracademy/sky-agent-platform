@@ -3,6 +3,7 @@
 namespace App\Filament\Agent\Widgets;
 
 use App\Models\Commission;
+use App\Models\Payout;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -21,13 +22,13 @@ class AgentCommissionOverview extends StatsOverviewWidget
             ->whereYear('created_at', now()->year)
             ->sum('amount');
         
-        // Pending commissions
-        $pendingCommissions = Commission::where('agent_id', $agentId)
+        // Pending payouts (from payouts table, not commissions)
+        $pendingCommissions = Payout::where('agent_id', $agentId)
             ->where('status', 'pending')
             ->sum('amount');
         
-        // Paid commissions
-        $paidCommissions = Commission::where('agent_id', $agentId)
+        // Paid payouts (from payouts table, not commissions)
+        $paidCommissions = Payout::where('agent_id', $agentId)
             ->where('status', 'paid')
             ->sum('amount');
 

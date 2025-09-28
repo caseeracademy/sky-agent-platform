@@ -25,7 +25,7 @@ class TestPayoutService extends Command
 
         $this->info("Found Agent: {$agent->name}");
 
-        $availableBalance = $agent->commissions()->where('status', 'earned')->sum('amount');
+        $availableBalance = $agent->commissions()->sum('amount');
         $this->info("Initial Available Balance: \${$availableBalance}");
 
         try {
@@ -36,8 +36,8 @@ class TestPayoutService extends Command
             $this->info('✅ Payout Service Executed Successfully!');
             $this->info('------------------------------------');
             
-            $newAvailableBalance = $agent->commissions()->where('status', 'earned')->sum('amount');
-            $newPendingBalance = $agent->commissions()->where('status', 'requested')->sum('amount');
+            $newAvailableBalance = $agent->commissions()->sum('amount');
+            $newPendingBalance = $agent->payouts()->where('status', 'pending')->sum('amount');
             
             $this->info("Final Available Balance: \${$newAvailableBalance}");
             $this->info("Final Pending Balance: \${$newPendingBalance}");

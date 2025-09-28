@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Agent\PayoutReceiptController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('landing');
 });
 
 // Agent payout receipt downloads (protected by auth middleware)

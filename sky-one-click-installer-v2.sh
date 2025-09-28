@@ -607,6 +607,48 @@ test_mysql_connection() {
     return 1
 }
 
+# Troubleshoot Composer installation
+troubleshoot_composer() {
+    print_status "Troubleshooting Composer installation..."
+    
+    # Check if composer is accessible
+    if ! command -v composer &> /dev/null; then
+        print_error "Composer not found in PATH"
+        return 1
+    fi
+    
+    # Check composer version
+    COMPOSER_VERSION=$(composer --version 2>/dev/null | head -n1)
+    print_debug "Composer version: $COMPOSER_VERSION"
+    
+    # Check if we're in the right directory
+    if [ ! -f "composer.json" ]; then
+        print_error "composer.json not found in current directory: $(pwd)"
+        return 1
+    fi
+    
+    # Check file permissions
+    if [ ! -r "composer.json" ]; then
+        print_error "composer.json is not readable"
+        print_status "Current permissions:"
+        ls -la composer.json
+        return 1
+    fi
+    
+    # Check if vendor directory is writable
+    if [ -d "vendor" ] && [ ! -w "vendor" ]; then
+        print_warning "vendor directory is not writable, fixing permissions..."
+        chown -R $APP_USER:www-data vendor
+        chmod -R 755 vendor
+    fi
+    
+    # Check PHP memory limit
+    PHP_MEMORY=$(php -r "echo ini_get('memory_limit');")
+    print_debug "PHP memory limit: $PHP_MEMORY"
+    
+    return 0
+}
+
 # Deploy application
 deploy_application() {
     print_step "Deploying application..."
@@ -650,10 +692,59 @@ deploy_application() {
     sudo -u $APP_USER git clone $REPO_URL .
     print_debug "Repository cloned successfully"
     
+    # Ensure proper permissions
+    print_status "Setting directory permissions..."
+    chown -R $APP_USER:www-data $DEPLOY_PATH
+    chmod -R 755 $DEPLOY_PATH
+    
+    # Verify composer.json exists
+    if [ ! -f "composer.json" ]; then
+        print_error "composer.json not found in cloned repository!"
+        print_status "Current directory contents:"
+        ls -la
+        return 1
+    fi
+    
     # Install PHP dependencies
     print_status "Installing Composer dependencies..."
-    sudo -u $APP_USER composer install --no-dev --optimize-autoloader --no-interaction
-    print_debug "Composer dependencies installed"
+    cd $DEPLOY_PATH
+    
+    # Check if we're in the right directory
+    if [ ! -f "composer.json" ]; then
+        print_error "composer.json not found! Current directory: $(pwd)"
+        print_status "Directory contents:"
+        ls -la
+        return 1
+    fi
+    
+    # Troubleshoot Composer first
+    if ! troubleshoot_composer; then
+        print_error "Composer troubleshooting failed"
+        return 1
+    fi
+    
+    # Run composer install with proper error handling
+    if sudo -u $APP_USER composer install --no-dev --optimize-autoloader --no-interaction; then
+        print_success "Composer dependencies installed successfully"
+        print_debug "Composer dependencies installed"
+    else
+        print_error "Failed to install Composer dependencies with application user"
+        print_status "Trying alternative approach..."
+        
+        # Try with different user context
+        if composer install --no-dev --optimize-autoloader --no-interaction; then
+            print_success "Composer dependencies installed with root user"
+            chown -R $APP_USER:www-data vendor composer.lock
+        else
+            print_error "Composer installation failed completely"
+            print_status "Manual troubleshooting required:"
+            print_status "1. Check if composer.json exists and is readable"
+            print_status "2. Check PHP memory limit (may need to increase)"
+            print_status "3. Check internet connectivity"
+            print_status "4. Try running: composer install --verbose"
+            return 1
+        fi
+    fi
     
     # Set up environment
     print_status "Setting up environment..."

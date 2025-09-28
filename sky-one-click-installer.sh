@@ -527,8 +527,22 @@ deploy_application() {
     print_status "Cloning repository..."
     sudo -u $APP_USER git clone $REPO_URL .
     
+    # Ensure proper permissions
+    print_status "Setting directory permissions..."
+    chown -R $APP_USER:www-data $DEPLOY_PATH
+    chmod -R 755 $DEPLOY_PATH
+    
+    # Verify composer.json exists
+    if [ ! -f "composer.json" ]; then
+        print_error "composer.json not found in cloned repository!"
+        print_status "Current directory contents:"
+        ls -la
+        return 1
+    fi
+    
     # Install PHP dependencies
     print_status "Installing Composer dependencies..."
+    cd $DEPLOY_PATH
     sudo -u $APP_USER composer install --no-dev --optimize-autoloader --no-interaction
     
     # Set up environment

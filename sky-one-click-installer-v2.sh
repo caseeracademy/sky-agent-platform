@@ -92,8 +92,21 @@ rollback() {
     
     if [ "$MYSQL_INSTALLED" = true ]; then
         print_status "Cleaning up MySQL..."
-        mysql -u root -p$DB_PASSWORD -e "DROP DATABASE IF EXISTS $DB_NAME;" 2>/dev/null || true
-        mysql -u root -p$DB_PASSWORD -e "DROP USER IF EXISTS '$DB_USER'@'localhost';" 2>/dev/null || true
+        
+        # Try multiple methods to clean up MySQL
+        if mysql -u root -p$DB_PASSWORD -e "DROP DATABASE IF EXISTS $DB_NAME; DROP USER IF EXISTS '$DB_USER'@'localhost';" 2>/dev/null; then
+            print_debug "MySQL cleanup with password successful"
+        elif mysql -u root -e "DROP DATABASE IF EXISTS $DB_NAME; DROP USER IF EXISTS '$DB_USER'@'localhost';" 2>/dev/null; then
+            print_debug "MySQL cleanup without password successful"
+        else
+            # Try with debian-sys-maint user
+            DEBIAN_PASSWORD=$(grep password /etc/mysql/debian.cnf | head -1 | awk '{print $3}' 2>/dev/null)
+            if [ ! -z "$DEBIAN_PASSWORD" ]; then
+                mysql -u debian-sys-maint -p$DEBIAN_PASSWORD -e "DROP DATABASE IF EXISTS $DB_NAME; DROP USER IF EXISTS '$DB_USER'@'localhost';" 2>/dev/null || true
+                print_debug "MySQL cleanup with debian-sys-maint user attempted"
+            fi
+        fi
+        
         print_debug "MySQL cleanup completed"
     fi
     
@@ -341,42 +354,182 @@ install_nginx() {
     print_debug "Nginx version: $(nginx -v 2>&1)"
 }
 
-# Install MySQL
+# Install MySQL with robust authentication handling
 install_mysql() {
-    print_step "Installing MySQL..."
+    print_step "Installing MySQL with secure authentication..."
     
+    # Install MySQL server
     apt install -y mysql-server
     
-    # Secure MySQL installation
-    mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$DB_PASSWORD';"
-    mysql -e "DELETE FROM mysql.user WHERE User='';"
-    mysql -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
-    mysql -e "DROP DATABASE IF EXISTS test;"
-    mysql -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
-    mysql -e "FLUSH PRIVILEGES;"
-    
+    # Start MySQL service
     systemctl start mysql
     systemctl enable mysql
+    
+    # Wait for MySQL to be ready
+    print_status "Waiting for MySQL to start..."
+    sleep 5
+    
+    # Test MySQL connection and handle authentication
+    setup_mysql_authentication
     
     MYSQL_INSTALLED=true
     print_success "MySQL installed and secured"
     print_debug "MySQL version: $(mysql --version)"
 }
 
-# Create database and user
+# Setup MySQL authentication with multiple fallback methods
+setup_mysql_authentication() {
+    print_status "Setting up MySQL authentication..."
+    
+    # Method 1: Try connecting without password (fresh install)
+    if mysql -u root -e "SELECT 1;" 2>/dev/null; then
+        print_debug "MySQL root access without password confirmed"
+        mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$DB_PASSWORD';"
+        mysql -u root -e "DELETE FROM mysql.user WHERE User='';"
+        mysql -u root -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
+        mysql -u root -e "DROP DATABASE IF EXISTS test;"
+        mysql -u root -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
+        mysql -u root -e "FLUSH PRIVILEGES;"
+        print_success "MySQL secured with password authentication"
+        return 0
+    fi
+    
+    # Method 2: Try connecting with the password we set
+    if mysql -u root -p$DB_PASSWORD -e "SELECT 1;" 2>/dev/null; then
+        print_debug "MySQL root access with password confirmed"
+        print_success "MySQL already secured"
+        return 0
+    fi
+    
+    # Method 3: Try using mysql_secure_installation approach
+    print_warning "Standard authentication failed, trying alternative methods..."
+    
+    # Create a temporary SQL file for secure installation
+    cat > /tmp/mysql_secure.sql << EOF
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$DB_PASSWORD';
+DELETE FROM mysql.user WHERE User='';
+DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
+DROP DATABASE IF EXISTS test;
+DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
+FLUSH PRIVILEGES;
+EOF
+    
+    # Try to execute the secure installation
+    if mysql -u root < /tmp/mysql_secure.sql 2>/dev/null; then
+        print_success "MySQL secured using alternative method"
+        rm -f /tmp/mysql_secure.sql
+        return 0
+    fi
+    
+    # Method 4: Use debian-sys-maint user (Ubuntu/Debian specific)
+    print_warning "Trying Ubuntu/Debian system maintenance user..."
+    DEBIAN_PASSWORD=$(grep password /etc/mysql/debian.cnf | head -1 | awk '{print $3}')
+    if [ ! -z "$DEBIAN_PASSWORD" ]; then
+        if mysql -u debian-sys-maint -p$DEBIAN_PASSWORD -e "SELECT 1;" 2>/dev/null; then
+            print_debug "Using debian-sys-maint user for MySQL setup"
+            mysql -u debian-sys-maint -p$DEBIAN_PASSWORD < /tmp/mysql_secure.sql 2>/dev/null
+            if [ $? -eq 0 ]; then
+                print_success "MySQL secured using debian-sys-maint user"
+                rm -f /tmp/mysql_secure.sql
+                return 0
+            fi
+        fi
+    fi
+    
+    # Method 5: Reset MySQL root password (last resort)
+    print_warning "Attempting MySQL root password reset..."
+    reset_mysql_root_password
+    
+    # Clean up
+    rm -f /tmp/mysql_secure.sql
+}
+
+# Reset MySQL root password as last resort
+reset_mysql_root_password() {
+    print_status "Resetting MySQL root password..."
+    
+    # Stop MySQL
+    systemctl stop mysql
+    
+    # Start MySQL in safe mode
+    mysqld_safe --skip-grant-tables --skip-networking &
+    MYSQL_PID=$!
+    
+    # Wait for MySQL to start
+    sleep 5
+    
+    # Connect and reset password
+    mysql -u root << EOF
+USE mysql;
+UPDATE user SET authentication_string=PASSWORD('$DB_PASSWORD') WHERE User='root';
+UPDATE user SET plugin='mysql_native_password' WHERE User='root';
+FLUSH PRIVILEGES;
+EOF
+    
+    # Stop the safe mode MySQL
+    kill $MYSQL_PID
+    sleep 2
+    
+    # Start MySQL normally
+    systemctl start mysql
+    
+    # Test the new password
+    if mysql -u root -p$DB_PASSWORD -e "SELECT 1;" 2>/dev/null; then
+        print_success "MySQL root password reset successful"
+        
+        # Now secure the installation
+        mysql -u root -p$DB_PASSWORD -e "DELETE FROM mysql.user WHERE User='';"
+        mysql -u root -p$DB_PASSWORD -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
+        mysql -u root -p$DB_PASSWORD -e "DROP DATABASE IF EXISTS test;"
+        mysql -u root -p$DB_PASSWORD -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
+        mysql -u root -p$DB_PASSWORD -e "FLUSH PRIVILEGES;"
+        
+        return 0
+    else
+        print_error "Failed to reset MySQL root password"
+        return 1
+    fi
+}
+
+# Create database and user with robust error handling
 setup_database() {
     print_step "Setting up database..."
     
-    # Create database and user
-    mysql -u root -p$DB_PASSWORD << EOF
-CREATE DATABASE $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWORD';
+    # Test MySQL connection first
+    if ! test_mysql_connection; then
+        print_error "Cannot connect to MySQL. Database setup failed."
+        return 1
+    fi
+    
+    # Create database and user with error handling
+    print_status "Creating database and user..."
+    
+    # Create SQL script for database setup
+    cat > /tmp/database_setup.sql << EOF
+CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWORD';
 GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'localhost';
 FLUSH PRIVILEGES;
 EOF
     
-    # Test database connection
-    mysql -u $DB_USER -p$DB_PASSWORD -e "SELECT 1;" $DB_NAME
+    # Execute database setup
+    if mysql -u root -p$DB_PASSWORD < /tmp/database_setup.sql; then
+        print_success "Database and user created successfully"
+    else
+        print_error "Failed to create database and user"
+        rm -f /tmp/database_setup.sql
+        return 1
+    fi
+    
+    # Test database connection with new user
+    print_status "Testing database connection..."
+    if mysql -u $DB_USER -p$DB_PASSWORD -e "SELECT 1;" $DB_NAME 2>/dev/null; then
+        print_success "Database connection test passed"
+    else
+        print_error "Database connection test failed"
+        rm -f /tmp/database_setup.sql
+        return 1
+    fi
     
     # Save database credentials
     cat > /home/$APP_USER/database-credentials.txt << EOF
@@ -385,13 +538,46 @@ Username: $DB_USER
 Password: $DB_PASSWORD
 Host: localhost
 Port: 3306
+Connection String: mysql://$DB_USER:$DB_PASSWORD@localhost:3306/$DB_NAME
 EOF
     
     chown $APP_USER:$APP_USER /home/$APP_USER/database-credentials.txt
     chmod 600 /home/$APP_USER/database-credentials.txt
     
-    print_success "Database and user created"
-    print_debug "Database connection test passed"
+    # Clean up
+    rm -f /tmp/database_setup.sql
+    
+    print_success "Database setup completed successfully"
+    print_debug "Database credentials saved to /home/$APP_USER/database-credentials.txt"
+}
+
+# Test MySQL connection with multiple methods
+test_mysql_connection() {
+    print_debug "Testing MySQL connection..."
+    
+    # Method 1: Try with password
+    if mysql -u root -p$DB_PASSWORD -e "SELECT 1;" 2>/dev/null; then
+        print_debug "MySQL connection successful with password"
+        return 0
+    fi
+    
+    # Method 2: Try without password
+    if mysql -u root -e "SELECT 1;" 2>/dev/null; then
+        print_debug "MySQL connection successful without password"
+        return 0
+    fi
+    
+    # Method 3: Try with debian-sys-maint user
+    DEBIAN_PASSWORD=$(grep password /etc/mysql/debian.cnf | head -1 | awk '{print $3}' 2>/dev/null)
+    if [ ! -z "$DEBIAN_PASSWORD" ]; then
+        if mysql -u debian-sys-maint -p$DEBIAN_PASSWORD -e "SELECT 1;" 2>/dev/null; then
+            print_debug "MySQL connection successful with debian-sys-maint user"
+            return 0
+        fi
+    fi
+    
+    print_error "All MySQL connection methods failed"
+    return 1
 }
 
 # Deploy application

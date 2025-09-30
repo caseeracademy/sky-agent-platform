@@ -1,7 +1,4 @@
-@php
-    $student = $record;
-    $documents = $student->documents()->with('uploadedBy')->orderBy('created_at', 'desc')->get();
-@endphp
+@props(['documents', 'showReplace' => true])
 
 <style>
     .document-card {
@@ -187,7 +184,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
         <p style="font-size: 1rem; font-weight: 600; color: #6b7280; margin-bottom: 0.375rem;">No documents uploaded yet</p>
-        <p style="font-size: 0.8125rem; color: #9ca3af;">Click the "Upload Document" button above to add supporting documents</p>
+        <p style="font-size: 0.8125rem; color: #9ca3af;">Upload supporting documents using the form below</p>
     </div>
 @else
     <div class="documents-container">
@@ -195,29 +192,33 @@
             <div class="document-card" style="display: flex; align-items: flex-start; gap: 1rem;">
                 <div class="document-icon-box">
                     @php
-                        $documentTypes = [
-                            'passport' => '🛂',
-                            'certificate' => '🏆',
-                            'transcript' => '📋',
-                            'photo' => '📸',
-                            'other' => '📄'
-                        ];
-                        $icon = $documentTypes[$document->type] ?? '📄';
+                        $icon = '📄'; // Default
+                        if (str_contains($document->mime_type ?? '', 'pdf')) {
+                            $icon = '📄';
+                        } elseif (str_contains($document->mime_type ?? '', 'image')) {
+                            $icon = '🖼️';
+                        } elseif (str_contains($document->mime_type ?? '', 'word') || str_contains($document->mime_type ?? '', 'document')) {
+                            $icon = '📝';
+                        } elseif (str_contains($document->mime_type ?? '', 'excel') || str_contains($document->mime_type ?? '', 'spreadsheet')) {
+                            $icon = '📊';
+                        }
                     @endphp
                     <span>{{ $icon }}</span>
                 </div>
                 
                 <div class="document-content">
-                    <h3 class="document-title">{{ $document->name }}</h3>
+                    @if($document->title)
+                        <h3 class="document-title">{{ $document->title }}</h3>
+                    @endif
                     
-                    <p class="document-filename">{{ $document->file_path }}</p>
+                    <p class="document-filename">{{ $document->original_filename }}</p>
                     
                     <div class="document-meta">
                         <div class="document-meta-item">
                             <svg class="document-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
-                            <span>{{ $document->uploadedBy->name ?? 'Unknown' }}</span>
+                            <span>{{ $document->uploadedByUser->name ?? 'Unknown' }}</span>
                         </div>
                         
                         <span style="color: #d1d5db;">•</span>
@@ -232,26 +233,28 @@
                     
                     <div class="document-badges">
                         <span class="document-badge badge-size">{{ $document->formatted_file_size }}</span>
-                        <span class="document-badge badge-type">{{ strtoupper(pathinfo($document->file_path, PATHINFO_EXTENSION)) }}</span>
+                        <span class="document-badge badge-type">{{ strtoupper(pathinfo($document->original_filename, PATHINFO_EXTENSION)) }}</span>
                     </div>
                 </div>
                 
                 <div class="document-actions">
-                    <a href="{{ Storage::disk('public')->url($document->file_path) }}" target="_blank" class="document-btn document-download-btn">
+                    <a href="{{ $document->download_url }}" target="_blank" class="document-btn document-download-btn">
                         <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                         Download
                     </a>
                     
-                    <button type="button" 
-                            onclick="replaceDocument({{ $document->id }})"
-                            class="document-btn document-replace-btn">
-                        <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-                        </svg>
-                        Replace
-                    </button>
+                    @if($showReplace)
+                        <button type="button" 
+                                onclick="replaceDocument({{ $document->id }})"
+                                class="document-btn document-replace-btn">
+                            <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                            </svg>
+                            Replace
+                        </button>
+                    @endif
                 </div>
             </div>
             
@@ -271,10 +274,3 @@ function replaceDocument(documentId) {
     }
 }
 </script>
-
-
-
-
-
-
-

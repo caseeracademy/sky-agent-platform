@@ -6,17 +6,15 @@ use App\Filament\Agent\Resources\Students\StudentResource;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Placeholder;
 use Filament\Resources\Pages\ViewRecord;
-use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Str;
 
 class ViewStudent extends ViewRecord
 {
     protected static string $resource = StudentResource::class;
-    
+
     protected static ?string $title = 'Student Details';
 
     public function form(Schema $schema): Schema
@@ -44,7 +42,7 @@ class ViewStudent extends ViewRecord
                                             ->content(fn ($record) => $record->phone ?: 'Not provided'),
                                     ])
                                     ->columns(3),
-                                    
+
                                 Section::make('Personal Details')
                                     ->schema([
                                         Placeholder::make('nationality')
@@ -61,7 +59,7 @@ class ViewStudent extends ViewRecord
                                             ->content(fn ($record) => $record->country_of_residence ?: 'Not provided'),
                                     ])
                                     ->columns(2),
-                                    
+
                                 Section::make('System Information')
                                     ->schema([
                                         Placeholder::make('created_at')
@@ -75,6 +73,7 @@ class ViewStudent extends ViewRecord
                                             ->content(function ($record) {
                                                 $color = 'success';
                                                 $label = 'Active';
+
                                                 return "<span class=\"fi-badge fi-color-{$color} fi-size-md inline-flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset\">{$label}</span>";
                                             })
                                             ->html(),
@@ -91,72 +90,75 @@ class ViewStudent extends ViewRecord
                                             ->label('Applications')
                                             ->content(function ($record) {
                                                 $applications = $record->applications()->with(['program.university'])->orderBy('created_at', 'desc')->get();
-                                                
+
                                                 if ($applications->isEmpty()) {
                                                     return '<div class="text-gray-500 italic text-center py-8">No applications submitted yet.</div>';
                                                 }
-                                                
+
                                                 $html = '<div class="space-y-4">';
                                                 foreach ($applications as $application) {
                                                     $statusColors = [
                                                         'pending' => 'warning',
-                                                        'submitted' => 'info', 
+                                                        'submitted' => 'info',
                                                         'under_review' => 'warning',
                                                         'additional_documents_required' => 'danger',
                                                         'approved' => 'success',
                                                         'rejected' => 'danger',
                                                         'enrolled' => 'success',
-                                                        'cancelled' => 'gray'
+                                                        'cancelled' => 'gray',
                                                     ];
                                                     $color = $statusColors[$application->status] ?? 'gray';
                                                     $statusLabel = ucfirst(str_replace('_', ' ', $application->status));
                                                     $submittedDate = $application->created_at->format('M j, Y');
-                                                    $commission = $application->commission_amount ? '$' . number_format($application->commission_amount, 2) : 'N/A';
-                                                    
+                                                    $commission = $application->commission_amount ? '$'.number_format($application->commission_amount, 2) : 'N/A';
+
                                                     $html .= '<div class="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">';
                                                     $html .= '<div class="flex items-center justify-between mb-3">';
                                                     $html .= '<div class="flex-1">';
-                                                    $html .= '<h4 class="font-medium text-gray-900">' . e($application->program->name) . '</h4>';
-                                                    $html .= '<p class="text-sm text-gray-600">' . e($application->program->university->name) . '</p>';
+                                                    $html .= '<h4 class="font-medium text-gray-900">'.e($application->program->name).'</h4>';
+                                                    $html .= '<p class="text-sm text-gray-600">'.e($application->program->university->name).'</p>';
                                                     $html .= '</div>';
-                                                    $html .= '<span class="fi-badge fi-color-' . $color . ' fi-size-md inline-flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset">' . $statusLabel . '</span>';
+                                                    $html .= '<span class="fi-badge fi-color-'.$color.' fi-size-md inline-flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset">'.$statusLabel.'</span>';
                                                     $html .= '</div>';
                                                     $html .= '<div class="grid grid-cols-3 gap-4 text-sm">';
-                                                    $html .= '<div><span class="text-gray-500">Application #:</span><br><span class="font-medium">' . e($application->application_number) . '</span></div>';
-                                                    $html .= '<div><span class="text-gray-500">Submitted:</span><br><span class="font-medium">' . $submittedDate . '</span></div>';
-                                                    $html .= '<div><span class="text-gray-500">Commission:</span><br><span class="font-medium text-green-600">' . $commission . '</span></div>';
+                                                    $html .= '<div><span class="text-gray-500">Application #:</span><br><span class="font-medium">'.e($application->application_number).'</span></div>';
+                                                    $html .= '<div><span class="text-gray-500">Submitted:</span><br><span class="font-medium">'.$submittedDate.'</span></div>';
+                                                    $html .= '<div><span class="text-gray-500">Commission:</span><br><span class="font-medium text-green-600">'.$commission.'</span></div>';
                                                     $html .= '</div>';
                                                     $html .= '</div>';
                                                 }
                                                 $html .= '</div>';
-                                                
+
                                                 return $html;
                                             })
                                             ->html(),
                                     ]),
-                                    
+
                                 Section::make('Application Summary')
                                     ->schema([
                                         Placeholder::make('total_applications')
                                             ->label('Total Applications')
-                                            ->content(fn ($record) => $record->applications()->count() . ' application' . ($record->applications()->count() !== 1 ? 's' : '')),
+                                            ->content(fn ($record) => $record->applications()->count().' application'.($record->applications()->count() !== 1 ? 's' : '')),
                                         Placeholder::make('approved_applications')
                                             ->label('Approved Applications')
                                             ->content(function ($record) {
                                                 $count = $record->applications()->where('status', 'approved')->count();
-                                                return $count . ' approved';
+
+                                                return $count.' approved';
                                             }),
                                         Placeholder::make('pending_applications')
                                             ->label('Pending Applications')
                                             ->content(function ($record) {
                                                 $count = $record->applications()->whereIn('status', ['pending', 'submitted', 'under_review'])->count();
-                                                return $count . ' pending';
+
+                                                return $count.' pending';
                                             }),
                                         Placeholder::make('total_commission_earned')
                                             ->label('Total Commission Earned')
                                             ->content(function ($record) {
                                                 $total = $record->applications()->where('status', 'approved')->sum('commission_amount');
-                                                return '$' . number_format($total, 2);
+
+                                                return '$'.number_format($total, 2);
                                             }),
                                     ])
                                     ->columns(2),
@@ -177,7 +179,7 @@ class ViewStudent extends ViewRecord
                                                 'certificate' => 'Certificate',
                                                 'transcript' => 'Transcript',
                                                 'photo' => 'Photo',
-                                                'other' => 'Other'
+                                                'other' => 'Other',
                                             ])
                                             ->required(),
                                         \Filament\Forms\Components\FileUpload::make('document_file')
@@ -192,28 +194,32 @@ class ViewStudent extends ViewRecord
                                     ->columns(2)
                                     ->collapsible()
                                     ->collapsed(false),
-                                    
+
                                 Section::make('Uploaded Documents')
                                     ->schema([
                                         Placeholder::make('documents_list')
                                             ->label('Documents')
                                             ->content(function ($record) {
                                                 return new \Illuminate\Support\HtmlString(
-                                                    view('filament.agent.pages.student-documents', ['record' => $record])->render()
+                                                    view('filament.components.student-documents-list', [
+                                                        'documents' => $record->documents()->with('uploadedBy')->orderBy('created_at', 'desc')->get(),
+                                                        'showReplace' => true, // Show replace button for agents
+                                                    ])->render()
                                                 );
                                             }),
                                     ]),
-                                    
+
                                 Section::make('Document Summary')
                                     ->schema([
                                         Placeholder::make('total_documents')
                                             ->label('Total Documents')
-                                            ->content(fn ($record) => $record->documents()->count() . ' document' . ($record->documents()->count() !== 1 ? 's' : '')),
+                                            ->content(fn ($record) => $record->documents()->count().' document'.($record->documents()->count() !== 1 ? 's' : '')),
                                         Placeholder::make('document_types')
                                             ->label('Document Types')
                                             ->content(function ($record) {
                                                 $types = $record->documents()->distinct('type')->pluck('type');
-                                                return $types->isEmpty() ? 'No documents' : $types->count() . ' different types';
+
+                                                return $types->isEmpty() ? 'No documents' : $types->count().' different types';
                                             }),
                                     ])
                                     ->columns(2)
@@ -236,47 +242,53 @@ class ViewStudent extends ViewRecord
                                         Placeholder::make('agent_status')
                                             ->label('Account Status')
                                             ->content(function ($record) {
-                                                if (!$record->agent) {
+                                                if (! $record->agent) {
                                                     return '<span class="fi-badge fi-color-gray fi-size-md inline-flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset">Not Assigned</span>';
                                                 }
                                                 $color = $record->agent->is_active ? 'success' : 'danger';
                                                 $label = $record->agent->is_active ? 'Active' : 'Inactive';
+
                                                 return "<span class=\"fi-badge fi-color-{$color} fi-size-md inline-flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset\">{$label}</span>";
                                             })
                                             ->html(),
                                     ])
                                     ->columns(2),
-                                    
+
                                 Section::make('Agent Performance with This Student')
                                     ->schema([
                                         Placeholder::make('student_applications')
                                             ->label('Applications for This Student')
-                                            ->content(fn ($record) => $record->applications()->count() . ' application' . ($record->applications()->count() !== 1 ? 's' : '')),
+                                            ->content(fn ($record) => $record->applications()->count().' application'.($record->applications()->count() !== 1 ? 's' : '')),
                                         Placeholder::make('student_success_rate')
                                             ->label('Success Rate for This Student')
                                             ->content(function ($record) {
                                                 $total = $record->applications()->count();
                                                 $approved = $record->applications()->where('status', 'approved')->count();
-                                                if ($total === 0) return '0% (No applications)';
+                                                if ($total === 0) {
+                                                    return '0% (No applications)';
+                                                }
                                                 $rate = round(($approved / $total) * 100);
-                                                return $rate . '% (' . $approved . '/' . $total . ' approved)';
+
+                                                return $rate.'% ('.$approved.'/'.$total.' approved)';
                                             }),
                                         Placeholder::make('total_commission_this_student')
                                             ->label('Total Commission from This Student')
                                             ->content(function ($record) {
                                                 $total = $record->applications()->where('status', 'approved')->sum('commission_amount');
-                                                return '$' . number_format($total, 2);
+
+                                                return '$'.number_format($total, 2);
                                             }),
                                         Placeholder::make('relationship_duration')
                                             ->label('Student Relationship Duration')
                                             ->content(function ($record) {
                                                 $duration = $record->created_at->diffForHumans(null, true);
-                                                return $duration . ' (since ' . $record->created_at->format('M j, Y') . ')';
+
+                                                return $duration.' (since '.$record->created_at->format('M j, Y').')';
                                             }),
                                     ])
                                     ->columns(2),
                             ]),
-                    ])
+                    ]),
             ]);
     }
 

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Agent\Resources\Students\Pages;
+namespace App\Filament\Resources\Students\Pages;
 
-use App\Filament\Agent\Resources\Students\StudentResource;
+use App\Filament\Resources\Students\StudentResource;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Placeholder;
 use Filament\Resources\Pages\ViewRecord;
@@ -222,7 +222,7 @@ class ViewStudent extends ViewRecord
 
                         Tab::make('Agent Information')
                             ->schema([
-                                Section::make('Your Agent Details')
+                                Section::make('Agent Details')
                                     ->schema([
                                         Placeholder::make('agent_name')
                                             ->label('Agent Name')

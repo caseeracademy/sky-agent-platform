@@ -115,26 +115,15 @@ class ViewApplication extends ViewRecord
                             ->schema([
                                 Section::make('Personal Details')
                                     ->schema([
-                                        Placeholder::make('student_name')
-                                            ->label('Student Name')
-                                            ->content(fn ($record) => $record->student->name),
-                                        Placeholder::make('student_email')
-                                            ->label('Email')
-                                            ->content(fn ($record) => $record->student->email),
-                                        Placeholder::make('student_phone')
-                                            ->label('Phone')
-                                            ->content(fn ($record) => $record->student->phone ?? 'Not provided'),
-                                        Placeholder::make('student_nationality')
-                                            ->label('Nationality')
-                                            ->content(fn ($record) => $record->student->nationality ?? 'Not provided'),
-                                        Placeholder::make('student_dob')
-                                            ->label('Date of Birth')
-                                            ->content(fn ($record) => $record->student->date_of_birth ? $record->student->date_of_birth->format('M j, Y') : 'Not provided'),
-                                        Placeholder::make('student_gender')
-                                            ->label('Gender')
-                                            ->content(fn ($record) => $record->student->gender ? ucfirst($record->student->gender) : 'Not provided'),
-                                    ])
-                                    ->columns(3),
+                                        Placeholder::make('student_info_display')
+                                            ->label('')
+                                            ->content(fn ($record) => new \Illuminate\Support\HtmlString(
+                                                view('filament.components.application-student-info', [
+                                                    'student' => $record->student,
+                                                    'studentId' => $record->student_id,
+                                                ])->render()
+                                            )),
+                                    ]),
                             ]),
 
                         Tab::make('Commission')

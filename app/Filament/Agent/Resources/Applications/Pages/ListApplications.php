@@ -3,7 +3,6 @@
 namespace App\Filament\Agent\Resources\Applications\Pages;
 
 use App\Filament\Agent\Resources\Applications\ApplicationResource;
-use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListApplications extends ListRecords
@@ -13,7 +12,7 @@ class ListApplications extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            // CreateAction removed - applications are now created through student creation workflow
         ];
     }
 }

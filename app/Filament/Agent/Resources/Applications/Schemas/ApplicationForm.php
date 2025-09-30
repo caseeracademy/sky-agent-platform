@@ -7,12 +7,10 @@ use App\Models\Student;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Repeater;
-use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\View;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class ApplicationForm
@@ -35,12 +33,13 @@ class ApplicationForm
                     ->preload()
                     ->options(function () {
                         return Student::where('agent_id', auth()->id())
-                            ->pluck('name', 'id');
-                    })
-                    ->createOptionForm([
-                        TextInput::make('name')->required(),
-                        TextInput::make('email')->email()->required(),
-                    ]),
+                            ->get()
+                            ->mapWithKeys(function ($student) {
+                                $name = $student->name ?: $student->first_name.' '.$student->last_name;
+
+                                return [$student->id => $name];
+                            });
+                    }),
                 Select::make('program_id')
                     ->label('Program')
                     ->required()
@@ -78,7 +77,7 @@ class ApplicationForm
                     ->disabled()
                     ->dehydrated()
                     ->helperText('Automatically calculated based on program'),
-                
+
                 Section::make('Documents')
                     ->schema([
                         FileUpload::make('document_uploads')

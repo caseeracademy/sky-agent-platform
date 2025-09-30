@@ -12,6 +12,7 @@ class StudentManagementTest extends TestCase
     use RefreshDatabase;
 
     protected User $agentOwner;
+
     protected User $agentStaff;
 
     protected function setUp(): void
@@ -36,10 +37,13 @@ class StudentManagementTest extends TestCase
     public function test_agent_can_create_student(): void
     {
         $studentData = [
-            'name' => 'John Doe',
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'passport_number' => 'A1234567',
+            'mothers_name' => 'Mary Doe',
+            'nationality' => 'American',
             'email' => 'john@example.com',
             'phone_number' => '+1234567890',
-            'country_of_residence' => 'United States',
             'date_of_birth' => '2000-01-01',
         ];
 
@@ -48,13 +52,14 @@ class StudentManagementTest extends TestCase
         ]));
 
         $this->assertDatabaseHas('students', [
-            'name' => 'John Doe',
+            'first_name' => 'John',
+            'last_name' => 'Doe',
             'email' => 'john@example.com',
             'agent_id' => $this->agentOwner->id,
         ]);
 
         $this->assertEquals($this->agentOwner->id, $student->agent_id);
-        $this->assertEquals('John Doe', $student->name);
+        $this->assertEquals('John Doe', $student->name); // This should be auto-generated
     }
 
     public function test_student_belongs_to_agent(): void
@@ -122,7 +127,7 @@ class StudentManagementTest extends TestCase
     public function test_student_age_calculation(): void
     {
         $birthDate = now()->subYears(25)->format('Y-m-d');
-        
+
         $student = Student::factory()->create([
             'agent_id' => $this->agentOwner->id,
             'date_of_birth' => $birthDate,
@@ -135,7 +140,8 @@ class StudentManagementTest extends TestCase
     {
         $student = Student::factory()->create([
             'agent_id' => $this->agentOwner->id,
-            'name' => 'Jane Smith',
+            'first_name' => 'Jane',
+            'last_name' => 'Smith',
             'email' => 'jane@example.com',
         ]);
 

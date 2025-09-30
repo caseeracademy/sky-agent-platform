@@ -20,9 +20,28 @@ class StudentFactory extends Factory
      */
     public function definition(): array
     {
+        $firstName = fake()->firstName();
+        $middleName = fake()->optional(0.3)->firstName(); // 30% chance of having middle name
+        $lastName = fake()->lastName();
+
         return [
             'agent_id' => User::factory()->create(['role' => 'agent_owner']),
-            'name' => fake()->name(),
+            'name' => $firstName.' '.($middleName ? $middleName.' ' : '').$lastName, // For backward compatibility
+            'first_name' => $firstName,
+            'middle_name' => $middleName,
+            'last_name' => $lastName,
+            'passport_number' => fake()->regexify('[A-Z]{2}[0-9]{7}'), // e.g., AB1234567
+            'mothers_name' => fake()->name('female'),
+            'nationality' => fake()->randomElement([
+                'American', 'Canadian', 'British', 'Australian', 'Indian', 'Chinese',
+                'German', 'French', 'Brazilian', 'Mexican', 'Japanese', 'Korean',
+                'Malaysian', 'Singaporean', 'Thai', 'Vietnamese', 'Philippine',
+                'Indonesian', 'Bangladeshi', 'Pakistani', 'Nigerian', 'Egyptian',
+                'Turkish', 'Russian', 'Ukrainian', 'Polish', 'Italian', 'Spanish',
+                'Portuguese', 'Dutch', 'Belgian', 'Swiss', 'Austrian', 'Swedish',
+                'Norwegian', 'Danish', 'Finnish', 'Greek', 'Czech', 'Hungarian',
+                'Romanian', 'Bulgarian', 'Croatian', 'Albanian', 'Other',
+            ]),
             'email' => fake()->unique()->safeEmail(),
             'phone_number' => fake()->phoneNumber(),
             'country_of_residence' => fake()->randomElement([

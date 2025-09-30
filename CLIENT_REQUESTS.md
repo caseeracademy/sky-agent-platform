@@ -90,3 +90,28 @@ Task updates: (please update each task status bellow, find the example i added)
      * app/Filament/Agent/Resources/Applications/Tables/ApplicationsTable.php
      * app/Filament/Agent/Resources/Applications/Pages/EditApplication.php
    - Tests added: AgentApplicationDeleteRestrictionTest to verify agents cannot delete applications
+
+   7. My client wants to do a major update on how the applications and students are created, once, the students will need to have these fields 
+Passport number, student first name, middle name and last name, mother's name, nationality, i need the registration form to also have uploads section with 3 buttons  that are   * Passport file  * Diploma * Transcript, also the student registration will also have a section that is for add to application (the client wants the whole process to happen once, we can also have the application creation part which is now active) this section will have university and program dropdown, we will select university, then when selected it shows the programs on that university as dropdown., so now the student creation will have 3 sections basic info section, uploads section with 3 ready upload buttons, and add to application section, the application management and student details section will be the same ✅ COMPLETED [x]
+   - Completely redesigned student creation form with 3 sections as requested
+   - Added new required student fields: passport_number, first_name, middle_name, last_name, mothers_name, nationality
+   - Implemented document upload section with 3 buttons: Passport file, Diploma, Transcript
+   - Added "Add to Application" section with university/program dropdowns (reactive selection)
+   - Students can now be created with or without applications in one workflow
+   - Maintained backward compatibility with existing 'name' field
+   - Added unique constraint for passport numbers
+   - Implementation:
+     * Created migration to add new student fields
+     * Updated Student model with new fillable fields and helper methods
+     * Completely redesigned StudentForm with 3 sections and reactive dropdowns
+     * Updated CreateStudent page to handle document uploads and application creation
+     * Updated Student factory for new fields
+     * Added comprehensive tests for new workflow
+   - Files created/updated:
+     * database/migrations/2025_09_30_154801_add_new_fields_to_students_table.php
+     * database/migrations/2025_09_30_155424_add_passport_number_unique_constraint_to_students_table.php
+     * app/Models/Student.php
+     * app/Filament/Agent/Resources/Students/Schemas/StudentForm.php
+     * app/Filament/Agent/Resources/Students/Pages/CreateStudent.php
+     * database/factories/StudentFactory.php
+     * tests/Feature/NewStudentCreationWorkflowTest.php

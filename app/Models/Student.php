@@ -18,12 +18,17 @@ class Student extends Model
      */
     protected $fillable = [
         'agent_id',
-        'name',
+        'name', // Keep for backward compatibility
+        'first_name',
+        'middle_name',
+        'last_name',
+        'passport_number',
+        'mothers_name',
+        'nationality',
         'email',
         'phone',
         'phone_number',
         'country_of_residence',
-        'nationality',
         'date_of_birth',
         'profile_image',
     ];
@@ -69,7 +74,42 @@ class Student extends Model
      */
     public function getDisplayNameAttribute(): string
     {
-        return "{$this->name} ({$this->email})";
+        $name = $this->getFullNameAttribute();
+
+        return "{$name} ({$this->email})";
+    }
+
+    /**
+     * Get the student's full name.
+     */
+    public function getFullNameAttribute(): string
+    {
+        if ($this->first_name && $this->last_name) {
+            $name = $this->first_name;
+            if ($this->middle_name) {
+                $name .= ' '.$this->middle_name;
+            }
+            $name .= ' '.$this->last_name;
+
+            return $name;
+        }
+
+        // Fallback to old 'name' field for backward compatibility
+        return $this->name ?? 'Unknown Student';
+    }
+
+    /**
+     * Get the student's full name for display in forms.
+     */
+    public function getNameAttribute(): ?string
+    {
+        // If we have the new fields, use them
+        if ($this->first_name && $this->last_name) {
+            return $this->getFullNameAttribute();
+        }
+
+        // Otherwise return the stored name (for backward compatibility)
+        return $this->attributes['name'] ?? null;
     }
 
     /**
@@ -93,7 +133,7 @@ class Student extends Model
      */
     public function getProfileImageUrlAttribute(): ?string
     {
-        if (!$this->profile_image) {
+        if (! $this->profile_image) {
             return null;
         }
 

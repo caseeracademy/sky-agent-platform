@@ -80,3 +80,13 @@ Task updates: (please update each task status bellow, find the example i added)
      * app/Filament/Resources/Students/Pages/ListStudents.php
      * app/Filament/Resources/Students/Pages/CreateStudent.php
      * app/Filament/Resources/Students/Pages/EditStudent.php
+
+6. The client wants to avoid the agency to be able to delete applications. ✅ COMPLETED [x]
+   - Removed bulk delete action from agent applications table
+   - Removed individual delete action from agent application edit page
+   - Agents can no longer delete applications - only superadmin has delete authority
+   - Implementation: Removed DeleteBulkAction and DeleteAction from agent application resources
+   - Files updated: 
+     * app/Filament/Agent/Resources/Applications/Tables/ApplicationsTable.php
+     * app/Filament/Agent/Resources/Applications/Pages/EditApplication.php
+   - Tests added: AgentApplicationDeleteRestrictionTest to verify agents cannot delete applications

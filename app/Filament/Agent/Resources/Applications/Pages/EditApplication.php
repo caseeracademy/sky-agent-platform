@@ -4,7 +4,7 @@ namespace App\Filament\Agent\Resources\Applications\Pages;
 
 use App\Filament\Agent\Resources\Applications\ApplicationResource;
 use App\Models\ApplicationDocument;
-use Filament\Actions\DeleteAction;
+// DeleteAction removed - agents cannot delete applications
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Storage;
 
@@ -15,7 +15,7 @@ class EditApplication extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            // Delete action removed - agents cannot delete applications
         ];
     }
 
@@ -23,8 +23,8 @@ class EditApplication extends EditRecord
     {
         // Handle document uploads if any
         $uploads = $this->data['document_uploads'] ?? [];
-        
-        if (!empty($uploads)) {
+
+        if (! empty($uploads)) {
             foreach ($uploads as $upload) {
                 if (is_string($upload) && Storage::disk('public')->exists($upload)) {
                     ApplicationDocument::create([

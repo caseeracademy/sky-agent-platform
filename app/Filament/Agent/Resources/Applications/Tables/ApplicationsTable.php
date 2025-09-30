@@ -2,12 +2,8 @@
 
 namespace App\Filament\Agent\Resources\Applications\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\BadgeColumn;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -87,9 +83,7 @@ class ApplicationsTable
                     ->button(),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                // Bulk delete removed - agents cannot delete applications
             ])
             ->defaultSort('created_at', 'desc')
             ->emptyStateHeading('No applications yet')

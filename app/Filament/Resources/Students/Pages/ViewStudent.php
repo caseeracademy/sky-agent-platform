@@ -166,35 +166,6 @@ class ViewStudent extends ViewRecord
 
                         Tab::make('Documents')
                             ->schema([
-                                Section::make('Upload New Document')
-                                    ->schema([
-                                        \Filament\Forms\Components\TextInput::make('document_name')
-                                            ->label('Document Name')
-                                            ->placeholder('e.g., Passport Copy, Academic Transcript')
-                                            ->maxLength(255),
-                                        \Filament\Forms\Components\Select::make('document_type')
-                                            ->label('Document Type')
-                                            ->options([
-                                                'passport' => 'Passport',
-                                                'certificate' => 'Certificate',
-                                                'transcript' => 'Transcript',
-                                                'photo' => 'Photo',
-                                                'other' => 'Other',
-                                            ])
-                                            ->required(),
-                                        \Filament\Forms\Components\FileUpload::make('document_file')
-                                            ->label('Upload File')
-                                            ->acceptedFileTypes(['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
-                                            ->maxSize(10240) // 10MB
-                                            ->disk('public')
-                                            ->directory('student-documents')
-                                            ->preserveFilenames()
-                                            ->required(),
-                                    ])
-                                    ->columns(2)
-                                    ->collapsible()
-                                    ->collapsed(false),
-
                                 Section::make('Uploaded Documents')
                                     ->schema([
                                         Placeholder::make('documents_list')
@@ -204,6 +175,8 @@ class ViewStudent extends ViewRecord
                                                     view('filament.components.student-documents-list', [
                                                         'documents' => $record->documents()->with('uploadedBy')->orderBy('created_at', 'desc')->get(),
                                                         'showReplace' => false, // Hide replace button for super admin
+                                                        'showUploadButton' => false, // Hide upload button for super admin
+                                                        'studentId' => $record->id,
                                                     ])->render()
                                                 );
                                             }),

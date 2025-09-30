@@ -195,22 +195,40 @@
             <div class="document-card" style="display: flex; align-items: flex-start; gap: 1rem;">
                 <div class="document-icon-box">
                     @php
+                        $icon = '📄'; // Default
+                        if (str_contains($document->mime_type ?? '', 'pdf')) {
+                            $icon = '📄';
+                        } elseif (str_contains($document->mime_type ?? '', 'image')) {
+                            $icon = '🖼️';
+                        } elseif (str_contains($document->mime_type ?? '', 'word') || str_contains($document->mime_type ?? '', 'document')) {
+                            $icon = '📝';
+                        } elseif (str_contains($document->mime_type ?? '', 'excel') || str_contains($document->mime_type ?? '', 'spreadsheet')) {
+                            $icon = '📊';
+                        }
+                        
+                        // Override with type-based icons if available
                         $documentTypes = [
                             'passport' => '🛂',
                             'certificate' => '🏆',
                             'transcript' => '📋',
                             'photo' => '📸',
+                            'visa' => '🌍',
+                            'language_test' => '🗣️',
                             'other' => '📄'
                         ];
-                        $icon = $documentTypes[$document->type] ?? '📄';
+                        if (isset($document->type) && isset($documentTypes[$document->type])) {
+                            $icon = $documentTypes[$document->type];
+                        }
                     @endphp
                     <span>{{ $icon }}</span>
                 </div>
                 
                 <div class="document-content">
-                    <h3 class="document-title">{{ $document->name }}</h3>
+                    @if($document->name)
+                        <h3 class="document-title">{{ $document->name }}</h3>
+                    @endif
                     
-                    <p class="document-filename">{{ $document->file_path }}</p>
+                    <p class="document-filename">{{ $document->file_name ?? $document->file_path }}</p>
                     
                     <div class="document-meta">
                         <div class="document-meta-item">
@@ -232,12 +250,12 @@
                     
                     <div class="document-badges">
                         <span class="document-badge badge-size">{{ $document->formatted_file_size }}</span>
-                        <span class="document-badge badge-type">{{ strtoupper(pathinfo($document->file_path, PATHINFO_EXTENSION)) }}</span>
+                        <span class="document-badge badge-type">{{ strtoupper(pathinfo($document->file_name ?? $document->file_path, PATHINFO_EXTENSION)) }}</span>
                     </div>
                 </div>
                 
                 <div class="document-actions">
-                    <a href="{{ Storage::disk('public')->url($document->file_path) }}" target="_blank" class="document-btn document-download-btn">
+                    <a href="{{ $document->download_url }}" target="_blank" class="document-btn document-download-btn">
                         <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>

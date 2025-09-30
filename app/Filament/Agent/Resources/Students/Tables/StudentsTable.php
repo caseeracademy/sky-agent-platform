@@ -2,8 +2,7 @@
 
 namespace App\Filament\Agent\Resources\Students\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
+// Bulk delete actions removed - only super admin can delete students
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
@@ -80,9 +79,7 @@ class StudentsTable
                     ->button(),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                // Bulk delete removed - only super admin can delete students
             ])
             ->defaultSort('created_at', 'desc')
             ->striped()

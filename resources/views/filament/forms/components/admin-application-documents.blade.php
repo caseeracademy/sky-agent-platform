@@ -22,7 +22,12 @@
                             @endif
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            @if($document->title)
+                                <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                    {{ $document->title }}
+                                </p>
+                            @endif
+                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
                                 {{ $document->original_filename }}
                             </p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -59,6 +64,8 @@
         <p class="text-xs text-gray-400 dark:text-gray-500">Agent needs to upload supporting documents</p>
     </div>
 @endif
+
+
 
 
 

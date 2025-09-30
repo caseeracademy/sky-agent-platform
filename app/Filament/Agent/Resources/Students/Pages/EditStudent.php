@@ -12,8 +12,13 @@ class EditStudent extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            DeleteAction::make(),
-        ];
+        $actions = [];
+
+        // Only super_admin can delete students
+        if (auth()->user()->isSuperAdmin()) {
+            $actions[] = DeleteAction::make();
+        }
+
+        return $actions;
     }
 }

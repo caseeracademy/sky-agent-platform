@@ -4,12 +4,14 @@ namespace App\Filament\Resources\Applications\Schemas;
 
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\View;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class ApplicationForm
@@ -76,43 +78,43 @@ class ApplicationForm
                     ->label('Reviewed At'),
                 DateTimePicker::make('decision_at')
                     ->label('Decision At'),
-                
+
                 Section::make('Application Documents')
                     ->schema([
-                        \Filament\Forms\Components\Placeholder::make('documents_list')
-                            ->label('Uploaded Documents')
-                            ->content(function ($record) {
-                                if (!$record || !$record->applicationDocuments->count()) {
-                                    return 'No documents uploaded yet.';
-                                }
+                        Placeholder::make('documents_display')
+                            ->label('')
+                            ->content(fn ($record) => new \Illuminate\Support\HtmlString(
+                                view('filament.components.application-documents-list-admin', [
+                                    'documents' => $record?->applicationDocuments ?? collect(),
+                                ])->render()
+                            ))
+                            ->visible(fn ($record) => $record !== null),
 
-                                $html = '<div class="space-y-3">';
-                                foreach ($record->applicationDocuments as $document) {
-                                    $downloadUrl = $document->download_url;
-                                    $fileIcon = str_contains($document->mime_type ?? '', 'pdf') ? '📄' : '🖼️';
-                                    $uploadedBy = $document->uploadedByUser->name;
-                                    $uploadedAt = $document->created_at->diffForHumans();
-                                    $fileSize = $document->formatted_file_size;
-                                    
-                                    $html .= "<div class='flex items-center justify-between p-3 bg-gray-50 rounded-lg'>";
-                                    $html .= "<div class='flex items-center space-x-3'>";
-                                    $html .= "<span class='text-2xl'>{$fileIcon}</span>";
-                                    $html .= "<div>";
-                                    $html .= "<p class='font-medium text-gray-900'>{$document->original_filename}</p>";
-                                    $html .= "<p class='text-sm text-gray-500'>{$fileSize} • Uploaded {$uploadedAt} by {$uploadedBy}</p>";
-                                    $html .= "</div>";
-                                    $html .= "</div>";
-                                    $html .= "<div>";
-                                    $html .= "<a href='{$downloadUrl}' target='_blank' class='inline-flex items-center px-3 py-1 border border-blue-300 text-sm font-medium rounded text-blue-700 bg-white hover:bg-blue-50'>Download</a>";
-                                    $html .= "</div>";
-                                    $html .= "</div>";
-                                }
-                                $html .= '</div>';
-
-                                return new \Illuminate\Support\HtmlString($html);
-                            })
+                        Repeater::make('new_documents')
+                            ->label('Upload New Documents')
+                            ->schema([
+                                TextInput::make('title')
+                                    ->label('Document Title')
+                                    ->placeholder('e.g., Passport, Transcript, Recommendation Letter')
+                                    ->required()
+                                    ->maxLength(255),
+                                FileUpload::make('file')
+                                    ->label('File')
+                                    ->required()
+                                    ->acceptedFileTypes(['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+                                    ->maxSize(10240) // 10MB
+                                    ->disk('public')
+                                    ->directory('application-documents')
+                                    ->preserveFilenames(),
+                            ])
+                            ->columns(2)
+                            ->addActionLabel('Add Document')
+                            ->defaultItems(0)
+                            ->reorderable(false)
+                            ->collapsible()
                             ->visible(fn ($record) => $record !== null),
                     ])
+                    ->description('Upload supporting documents for this application with descriptive titles')
                     ->collapsible()
                     ->visible(fn ($record) => $record !== null),
             ]);

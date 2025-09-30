@@ -72,6 +72,9 @@ class User extends Authenticatable
     /**
      * Get the students managed by this agent.
      */
+    /**
+     * Get the students belonging to this agent.
+     */
     public function students(): HasMany
     {
         return $this->hasMany(Student::class, 'agent_id');

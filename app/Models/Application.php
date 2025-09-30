@@ -24,6 +24,7 @@ class Application extends Model
         'status',
         'notes',
         'admin_notes',
+        'additional_documents_request',
         'documents',
         'intake_date',
         'commission_amount',
@@ -77,7 +78,7 @@ class Application extends Model
             if ($application->isDirty('status') && auth()->check()) {
                 $oldStatus = $application->getOriginal('status');
                 $newStatus = $application->status;
-                
+
                 ApplicationLog::logStatusChange(
                     $application,
                     auth()->user(),
@@ -94,7 +95,7 @@ class Application extends Model
     public static function generateApplicationNumber(): string
     {
         do {
-            $number = 'APP-' . now()->format('Y') . '-' . strtoupper(Str::random(6));
+            $number = 'APP-'.now()->format('Y').'-'.strtoupper(Str::random(6));
         } while (static::where('application_number', $number)->exists());
 
         return $number;
@@ -194,8 +195,8 @@ class Application extends Model
     public function scopeCommissionPending(\Illuminate\Database\Eloquent\Builder $query): void
     {
         $query->where('status', 'approved')
-              ->where('commission_paid', false)
-              ->whereNotNull('commission_amount');
+            ->where('commission_paid', false)
+            ->whereNotNull('commission_amount');
     }
 
     /**

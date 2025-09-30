@@ -1,26 +1,28 @@
-# Bugs to Solve
+# Bugs To Solve
 
-## Student Document Replace Functionality
+## Critical Issues
 
-**Issue**: The replace button on the student documents tab shows "Error replacing document. Please try again." when trying to replace a document.
+### 1. Livewire Multiple Root Elements Error - CRITICAL
+**Status**: 🔴 UNSOLVED - TEMPORARY FIX APPLIED  
+**Error**: `Livewire\Features\SupportMultipleRootElementDetection\MultipleRootElementsDetectedException`  
+**Description**: Livewire only supports one HTML element per component. Multiple root elements detected for component: [app.filament.agent.resources.applications.pages.view-application]  
+**Impact**: Application details page crashes when trying to view applications with additional documents required status  
+**URL**: http://sky.test/agent/applications/7  
+**Attempts Made**:
+- ❌ Separated warning panel from modal into different components
+- ❌ Wrapped everything in single root div
+- ❌ Moved styles inside root element
+- ❌ Created unified component with warning + modal
+- ❌ Fixed indentation and structure
+- ❌ All approaches still result in multiple root elements error
 
-**Location**: 
-- `/agent/students/{id}` - Student Details Page → Documents Tab
-- Replace button on existing student documents
+**Current Status**: TEMPORARY FIX - Button shows without modal functionality to prevent page crashes
 
-**Problem**: 
-- Replace functionality is not working properly
-- Users get error message when trying to replace documents
-- Need to implement the same working functionality as application documents
+**Root Cause**: Complex modal structure with JavaScript still violates Livewire's single root element requirement despite multiple attempts.
 
-**Priority**: Medium
-**Status**: Pending
+**Next Approach**: Need to completely redesign the approach - possibly using Livewire's built-in modal system or moving to a different architectural pattern.
 
-**Notes**: 
-- Application documents replace functionality works correctly
-- Need to copy the exact same approach from application documents
-- Should be simple file selection and immediate replace, not complex modals
-
----
-
-*This file tracks bugs that need to be resolved in future development cycles.*
+**Priority**: 🔴 CRITICAL - Blocks core functionality
+**Date Reported**: 2025-09-30
+**Last Attempt**: 2025-09-30 21:45:00 UTC
+**Temporary Fix Applied**: 2025-09-30 22:00:00 UTC

@@ -24,22 +24,63 @@ class ApplicationForm
                     ->disabled()
                     ->label('Application Number'),
                 Select::make('student_id')
-                    ->relationship('student', 'name')
                     ->disabled()
-                    ->label('Student'),
+                    ->label('Student')
+                    ->options(function ($record) {
+                        if (! $record || ! $record->student) {
+                            return [];
+                        }
+
+                        $student = $record->student;
+                        // Ensure we always have a valid name
+                        $name = $student->name;
+                        if (! $name) {
+                            $name = trim(($student->first_name ?? '').' '.($student->last_name ?? ''));
+                        }
+                        // Fallback to email if name is still empty
+                        if (! $name) {
+                            $name = $student->email ?? 'Unknown Student';
+                        }
+
+                        return [$student->id => $name];
+                    }),
                 Select::make('program_id')
-                    ->relationship('program', 'name')
                     ->disabled()
-                    ->label('Program'),
+                    ->label('Program')
+                    ->options(function ($record) {
+                        if (! $record || ! $record->program) {
+                            return [];
+                        }
+
+                        $program = $record->program;
+                        $programName = $program->name ?? 'Unknown Program';
+                        $universityName = $program->university->name ?? 'Unknown University';
+
+                        return [$program->id => "{$programName} ({$universityName})"];
+                    }),
                 Select::make('agent_id')
-                    ->relationship('agent', 'name')
                     ->disabled()
-                    ->label('Agent'),
+                    ->label('Agent')
+                    ->options(function ($record) {
+                        if (! $record || ! $record->agent) {
+                            return [];
+                        }
+
+                        $agent = $record->agent;
+
+                        return [$agent->id => $agent->name ?? 'Unknown Agent'];
+                    }),
                 Select::make('assigned_admin_id')
-                    ->relationship('assignedAdmin', 'name')
                     ->label('Assigned Admin')
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->options(function () {
+                        return \App\Models\User::where('role', 'super_admin')
+                            ->get()
+                            ->mapWithKeys(function ($admin) {
+                                return [$admin->id => $admin->name ?? 'Unknown Admin'];
+                            });
+                    }),
                 Select::make('status')
                     ->options([
                         'draft' => 'Draft',
@@ -52,7 +93,15 @@ class ApplicationForm
                         'cancelled' => 'Cancelled',
                     ])
                     ->required()
-                    ->label('Status'),
+                    ->label('Status')
+                    ->reactive(),
+                Textarea::make('additional_documents_request')
+                    ->label('Document Request Details')
+                    ->placeholder('Please specify what documents are missing. For example: "Please provide an updated transcript with final grades for semester 4" or "We need a copy of your IELTS certificate with a score of 6.5 or higher".')
+                    ->rows(4)
+                    ->helperText('Be specific about what documents are needed and any requirements or deadlines.')
+                    ->visible(fn (callable $get) => $get('status') === 'additional_documents_required')
+                    ->required(fn (callable $get) => $get('status') === 'additional_documents_required'),
                 Textarea::make('notes')
                     ->disabled()
                     ->label('Agent Notes')

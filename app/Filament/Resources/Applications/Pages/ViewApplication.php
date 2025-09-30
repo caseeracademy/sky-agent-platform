@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\Applications\Pages;
 
 use App\Filament\Resources\Applications\ApplicationResource;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Textarea;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
@@ -392,6 +394,41 @@ class ViewApplication extends ViewRecord
         // Only show edit action if application is not approved (locking rule)
         if ($this->getRecord()->status !== 'approved') {
             $actions[] = EditAction::make();
+        }
+
+        // Add action to request additional documents
+        if (in_array($this->getRecord()->status, ['submitted', 'under_review'])) {
+            $actions[] = Action::make('requestAdditionalDocuments')
+                ->label('Request Additional Documents')
+                ->icon('heroicon-o-exclamation-triangle')
+                ->color('warning')
+                ->modalHeading('Request Additional Documents')
+                ->modalDescription('Specify what documents are missing and provide details to the agent.')
+                ->modalSubmitActionLabel('Send Request to Agent')
+                ->form([
+                    Textarea::make('additional_documents_request')
+                        ->label('Document Request Details')
+                        ->placeholder('Please specify what documents are missing. For example: "Please provide an updated transcript with final grades for semester 4" or "We need a copy of your IELTS certificate with a score of 6.5 or higher".')
+                        ->required()
+                        ->rows(4)
+                        ->helperText('Be specific about what documents are needed and any requirements or deadlines.'),
+                ])
+                ->action(function (array $data) {
+                    $this->getRecord()->update([
+                        'status' => 'additional_documents_required',
+                        'additional_documents_request' => $data['additional_documents_request'],
+                        'reviewed_at' => now(),
+                    ]);
+
+                    // Log the status change
+                    $this->getRecord()->applicationLogs()->create([
+                        'user_id' => auth()->id(),
+                        'note' => 'Application status changed to "Additional Documents Required" by admin.',
+                        'status_change' => 'additional_documents_required',
+                    ]);
+
+                    $this->notify('success', 'Document request sent to agent successfully.');
+                });
         }
 
         return $actions;

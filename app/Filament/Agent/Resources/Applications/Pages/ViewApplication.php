@@ -16,7 +16,6 @@ use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class ViewApplication extends ViewRecord
 {
@@ -38,6 +37,26 @@ class ViewApplication extends ViewRecord
                     ->tabs([
                         Tab::make('Application Overview')
                             ->schema([
+                                // Warning panel for additional documents required - FIRST SECTION
+                                Section::make('Document Request')
+                                    ->schema([
+                                        Placeholder::make('additional_documents_warning')
+                                            ->label('')
+                                            ->content(function ($record) {
+                                                if ($record->status !== 'additional_documents_required' || ! $record->additional_documents_request) {
+                                                    return '';
+                                                }
+
+                                                return new \Illuminate\Support\HtmlString(
+                                                    view('filament.components.additional-documents-warning-simple', [
+                                                        'request' => $record->additional_documents_request,
+                                                    ])->render()
+                                                );
+                                            })
+                                            ->visible(fn ($record) => $record->status === 'additional_documents_required' && $record->additional_documents_request),
+                                    ])
+                                    ->visible(fn ($record) => $record->status === 'additional_documents_required' && $record->additional_documents_request),
+
                                 Section::make('Basic Information')
                                     ->schema([
                                         Placeholder::make('application_number')
@@ -328,102 +347,18 @@ class ViewApplication extends ViewRecord
                             ->schema([
                                 Section::make('Application Activity')
                                     ->schema([
-                                        Placeholder::make('timeline_cards')
+                                        Placeholder::make('timeline_display')
                                             ->label('')
                                             ->content(function ($record) {
-                                                $logs = $record->applicationLogs()
-                                                    ->with('user')
-                                                    ->orderBy('created_at', 'desc')
-                                                    ->get();
-
-                                                if ($logs->isEmpty()) {
-                                                    return '<div class="text-center py-12 text-gray-500">
-                                                        <div class="text-lg font-medium">No activity recorded</div>
-                                                        <div class="text-sm">Activity will appear here as you progress the application.</div>
-                                                    </div>';
-                                                }
-
-                                                $html = '<div class="space-y-6">';
-                                                foreach ($logs as $log) {
-                                                    $userName = $log->user->name ?? 'System';
-                                                    $userRole = $log->user ? Str::of($log->user->role)->headline() : 'System';
-                                                    $timestamp = $log->created_at->format('M j, Y g:i A');
-                                                    $timeAgo = $log->created_at->diffForHumans();
-
-                                                    $statusData = match (true) {
-                                                        str_contains(strtolower($log->note), 'created') => ['NEW APPLICATION', 'bg-sky-100 text-sky-800', 'bg-sky-500', 'bg-sky-100 text-sky-800'],
-                                                        str_contains(strtolower($log->note), 'submitted') => ['SUBMITTED', 'bg-blue-100 text-blue-800', 'bg-blue-500', 'bg-blue-100 text-blue-800'],
-                                                        str_contains(strtolower($log->note), 'approved') => ['OFFER SENT', 'bg-amber-100 text-amber-800', 'bg-amber-500', 'bg-amber-100 text-amber-800'],
-                                                        str_contains(strtolower($log->note), 'rejected') => ['DECLINED', 'bg-rose-100 text-rose-800', 'bg-rose-500', 'bg-rose-100 text-rose-800'],
-                                                        str_contains(strtolower($log->note), 'under review') => ['IN REVIEW', 'bg-indigo-100 text-indigo-800', 'bg-indigo-500', 'bg-indigo-100 text-indigo-800'],
-                                                        str_contains(strtolower($log->note), 'document') => ['DOCUMENT UPDATE', 'bg-violet-100 text-violet-800', 'bg-violet-500', 'bg-violet-100 text-violet-800'],
-                                                        default => ['UPDATED', 'bg-slate-100 text-slate-800', 'bg-slate-500', 'bg-slate-100 text-slate-800'],
-                                                    };
-
-                                                    [$statusLabel, $badgeClasses, $dotClasses, $cardAccent] = $statusData;
-
-                                                    $html .= '<div class="grid gap-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                                                        <div class="flex items-center justify-between">
-                                                            <div class="flex items-center space-x-3">
-                                                                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-inner">
-                                                                    <div class="h-3.5 w-3.5 rounded-full '.$dotClasses.'"></div>
-                                                                </div>
-                                                                <div>
-                                                                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold '.$badgeClasses.'">'.e($statusLabel).'</span>
-                                                                    <p class="mt-1 text-sm font-medium text-gray-900">'.e($log->note).'</p>
-                                                                </div>
-                                                            </div>
-                                                            <div class="text-right text-sm text-gray-500">
-                                                                <p>'.e($timestamp).'</p>
-                                                                <p>'.e($timeAgo).'</p>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="grid gap-3 rounded-xl bg-gray-50 p-4 text-sm text-gray-600">
-                                                            <div class="flex items-start">
-                                                                <span class="mt-1 flex h-6 w-6 items-center justify-center rounded-full '.$cardAccent.'">
-                                                                    <svg class="h-3 w-3 text-current" viewBox="0 0 20 20" fill="currentColor">
-                                                                        <path fill-rule="evenodd" d="M10 3a1 1 0 01.894.553l6 12A1 1 0 0116 17H4a1 1 0 01-.894-1.447l6-12A1 1 0 0110 3zm0 3a1 1 0 100 2 1 1 0 000-2zm-1 5a1 1 0 112 0v2a1 1 0 11-2 0v-2z" clip-rule="evenodd"></path>
-                                                                    </svg>
-                                                                </span>
-                                                                <div class="ml-3">
-                                                                    <p class="font-semibold text-gray-900">Log Notes</p>
-                                                                    <p class="text-gray-600">'.e(Str::of($log->note)->ucfirst()).'</p>
-                                                                </div>
-                                                            </div>
-
-                                                            <div class="flex items-start">
-                                                                <span class="mt-1 flex h-6 w-6 items-center justify-center rounded-full '.$cardAccent.'">
-                                                                    <svg class="h-3 w-3 text-current" viewBox="0 0 20 20" fill="currentColor">
-                                                                        <path fill-rule="evenodd" d="M6 3a1 1 0 00-.894.553L2.382 9H17.618l-2.724-5.447A1 1 0 0014 3H6zm2 10a2 2 0 104 0V9H8v4z" clip-rule="evenodd"></path>
-                                                                    </svg>
-                                                                </span>
-                                                                <div class="ml-3">
-                                                                    <p class="font-semibold text-gray-900">Status Change</p>
-                                                                    <p class="text-gray-600">'.($log->status_change ? e(Str::of($log->status_change)->headline()) : 'No status change recorded.').'</p>
-                                                                </div>
-                                                            </div>
-
-                                                            <div class="flex items-start">
-                                                                <span class="mt-1 flex h-6 w-6 items-center justify-center rounded-full '.$cardAccent.'">
-                                                                    <svg class="h-3 w-3 text-current" viewBox="0 0 20 20" fill="currentColor">
-                                                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-                                                                    </svg>
-                                                                </span>
-                                                                <div class="ml-3">
-                                                                    <p class="font-semibold text-gray-900">Performed By</p>
-                                                                    <p class="text-gray-600">'.e($userName).' <span class="text-xs text-gray-400">('.e(Str::headline($userRole)).')</span></p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>';
-                                                }
-
-                                                $html .= '</div>';
-
-                                                return $html;
-                                            })
-                                            ->html(),
+                                                return new \Illuminate\Support\HtmlString(
+                                                    view('filament.components.application-timeline', [
+                                                        'logs' => $record->applicationLogs()
+                                                            ->with('user')
+                                                            ->orderBy('created_at', 'desc')
+                                                            ->get(),
+                                                    ])->render()
+                                                );
+                                            }),
                                     ]),
                             ]),
                     ]),

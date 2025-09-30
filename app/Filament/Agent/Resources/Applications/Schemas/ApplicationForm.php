@@ -35,7 +35,15 @@ class ApplicationForm
                         return Student::where('agent_id', auth()->id())
                             ->get()
                             ->mapWithKeys(function ($student) {
-                                $name = $student->name ?: $student->first_name.' '.$student->last_name;
+                                // Ensure we always have a valid name
+                                $name = $student->name;
+                                if (! $name) {
+                                    $name = trim(($student->first_name ?? '').' '.($student->last_name ?? ''));
+                                }
+                                // Fallback to email if name is still empty
+                                if (! $name) {
+                                    $name = $student->email ?? 'Unknown Student';
+                                }
 
                                 return [$student->id => $name];
                             });
@@ -50,7 +58,10 @@ class ApplicationForm
                             ->active()
                             ->get()
                             ->mapWithKeys(function ($program) {
-                                return [$program->id => "{$program->name} ({$program->university->name})"];
+                                $programName = $program->name ?? 'Unknown Program';
+                                $universityName = $program->university->name ?? 'Unknown University';
+
+                                return [$program->id => "{$programName} ({$universityName})"];
                             });
                     })
                     ->reactive()

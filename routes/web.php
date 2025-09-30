@@ -35,4 +35,8 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsAgent::class])->grou
     // Student document download
     Route::get('/agent/students/{student}/documents/{document}/download', [App\Http\Controllers\Agent\StudentDocumentController::class, 'download'])
         ->name('agent.student.documents.download');
+
+    // Application document upload
+    Route::post('/agent/upload-documents', [App\Http\Controllers\AgentDocumentUploadController::class, 'uploadDocuments'])
+        ->name('agent.upload.documents');
 });

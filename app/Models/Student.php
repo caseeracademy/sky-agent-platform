@@ -30,6 +30,7 @@ class Student extends Model
         'phone_number',
         'country_of_residence',
         'date_of_birth',
+        'gender',
         'profile_image',
     ];
 
@@ -138,6 +139,19 @@ class Student extends Model
         }
 
         return Storage::disk('public')->url($this->profile_image);
+    }
+
+    /**
+     * Get the profile avatar URL with default fallback.
+     */
+    public function getAvatarUrlAttribute(): string
+    {
+        if ($this->profile_image && Storage::disk('public')->exists($this->profile_image)) {
+            return Storage::disk('public')->url($this->profile_image);
+        }
+
+        // Return default avatar
+        return asset('images/default-avatar.svg');
     }
 
     /**

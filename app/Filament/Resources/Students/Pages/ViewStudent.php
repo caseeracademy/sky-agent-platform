@@ -29,6 +29,17 @@ class ViewStudent extends ViewRecord
                     ->tabs([
                         Tab::make('Student Overview')
                             ->schema([
+                                Section::make('Profile')
+                                    ->schema([
+                                        Placeholder::make('profile_display')
+                                            ->label('')
+                                            ->content(fn ($record) => new \Illuminate\Support\HtmlString(
+                                                view('filament.components.student-profile-header', [
+                                                    'student' => $record,
+                                                ])->render()
+                                            )),
+                                    ]),
+
                                 Section::make('Basic Information')
                                     ->schema([
                                         Placeholder::make('name')
@@ -87,51 +98,16 @@ class ViewStudent extends ViewRecord
                                 Section::make('Application History')
                                     ->schema([
                                         Placeholder::make('applications_list')
-                                            ->label('Applications')
-                                            ->content(function ($record) {
-                                                $applications = $record->applications()->with(['program.university'])->orderBy('created_at', 'desc')->get();
-
-                                                if ($applications->isEmpty()) {
-                                                    return '<div class="text-gray-500 italic text-center py-8">No applications submitted yet.</div>';
-                                                }
-
-                                                $html = '<div class="space-y-4">';
-                                                foreach ($applications as $application) {
-                                                    $statusColors = [
-                                                        'pending' => 'warning',
-                                                        'submitted' => 'info',
-                                                        'under_review' => 'warning',
-                                                        'additional_documents_required' => 'danger',
-                                                        'approved' => 'success',
-                                                        'rejected' => 'danger',
-                                                        'enrolled' => 'success',
-                                                        'cancelled' => 'gray',
-                                                    ];
-                                                    $color = $statusColors[$application->status] ?? 'gray';
-                                                    $statusLabel = ucfirst(str_replace('_', ' ', $application->status));
-                                                    $submittedDate = $application->created_at->format('M j, Y');
-                                                    $commission = $application->commission_amount ? '$'.number_format($application->commission_amount, 2) : 'N/A';
-
-                                                    $html .= '<div class="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">';
-                                                    $html .= '<div class="flex items-center justify-between mb-3">';
-                                                    $html .= '<div class="flex-1">';
-                                                    $html .= '<h4 class="font-medium text-gray-900">'.e($application->program->name).'</h4>';
-                                                    $html .= '<p class="text-sm text-gray-600">'.e($application->program->university->name).'</p>';
-                                                    $html .= '</div>';
-                                                    $html .= '<span class="fi-badge fi-color-'.$color.' fi-size-md inline-flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset">'.$statusLabel.'</span>';
-                                                    $html .= '</div>';
-                                                    $html .= '<div class="grid grid-cols-3 gap-4 text-sm">';
-                                                    $html .= '<div><span class="text-gray-500">Application #:</span><br><span class="font-medium">'.e($application->application_number).'</span></div>';
-                                                    $html .= '<div><span class="text-gray-500">Submitted:</span><br><span class="font-medium">'.$submittedDate.'</span></div>';
-                                                    $html .= '<div><span class="text-gray-500">Commission:</span><br><span class="font-medium text-green-600">'.$commission.'</span></div>';
-                                                    $html .= '</div>';
-                                                    $html .= '</div>';
-                                                }
-                                                $html .= '</div>';
-
-                                                return $html;
-                                            })
-                                            ->html(),
+                                            ->label('')
+                                            ->content(fn ($record) => new \Illuminate\Support\HtmlString(
+                                                view('filament.components.student-applications-list', [
+                                                    'applications' => $record->applications()
+                                                        ->with(['program.university', 'agent'])
+                                                        ->orderBy('created_at', 'desc')
+                                                        ->get(),
+                                                    'isAdmin' => true,
+                                                ])->render()
+                                            )),
                                     ]),
 
                                 Section::make('Application Summary')

@@ -112,6 +112,30 @@ class User extends Authenticatable
         return $this->hasMany(Payout::class, 'agent_id');
     }
 
+    /**
+     * Get the scholarship awards received by this agent.
+     */
+    public function scholarshipAwards(): HasMany
+    {
+        return $this->hasMany(ScholarshipAward::class, 'agent_id');
+    }
+
+    /**
+     * Get the scholarship points for this user (agent).
+     */
+    public function scholarshipPoints(): HasMany
+    {
+        return $this->hasMany(ScholarshipPoint::class, 'agent_id');
+    }
+
+    /**
+     * Get the scholarship commissions for this user (agent).
+     */
+    public function scholarshipCommissions(): HasMany
+    {
+        return $this->hasMany(ScholarshipCommission::class, 'agent_id');
+    }
+
     public function wallet(): HasOne
     {
         return $this->hasOne(Wallet::class, 'agent_id');

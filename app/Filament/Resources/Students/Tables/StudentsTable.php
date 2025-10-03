@@ -9,6 +9,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ExportAction;
 use Filament\Actions\ExportBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -20,6 +21,13 @@ class StudentsTable
     {
         return $table
             ->columns([
+                ImageColumn::make('profile_image')
+                    ->label('Avatar')
+                    ->circular()
+                    ->disk('public')
+                    ->defaultImageUrl(url('/images/default-avatar.svg'))
+                    ->size(40),
+
                 TextColumn::make('agent.name')
                     ->label('Agent')
                     ->searchable()

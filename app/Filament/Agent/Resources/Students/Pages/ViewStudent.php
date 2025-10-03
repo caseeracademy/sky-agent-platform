@@ -29,6 +29,17 @@ class ViewStudent extends ViewRecord
                     ->tabs([
                         Tab::make('Student Overview')
                             ->schema([
+                                Section::make('Profile')
+                                    ->schema([
+                                        Placeholder::make('profile_display')
+                                            ->label('')
+                                            ->content(fn ($record) => new \Illuminate\Support\HtmlString(
+                                                view('filament.components.student-profile-header', [
+                                                    'student' => $record,
+                                                ])->render()
+                                            )),
+                                    ]),
+
                                 Section::make('Basic Information')
                                     ->schema([
                                         Placeholder::make('name')
@@ -87,17 +98,16 @@ class ViewStudent extends ViewRecord
                                 Section::make('Application History')
                                     ->schema([
                                         Placeholder::make('applications_list')
-                                            ->label('Applications')
-                                            ->content(function ($record) {
-                                                return new \Illuminate\Support\HtmlString(
-                                                    view('filament.components.student-applications-list', [
-                                                        'applications' => $record->applications()
-                                                            ->with(['program.university', 'agent'])
-                                                            ->orderBy('created_at', 'desc')
-                                                            ->get(),
-                                                    ])->render()
-                                                );
-                                            }),
+                                            ->label('')
+                                            ->content(fn ($record) => new \Illuminate\Support\HtmlString(
+                                                view('filament.components.student-applications-list', [
+                                                    'applications' => $record->applications()
+                                                        ->with(['program.university', 'agent'])
+                                                        ->orderBy('created_at', 'desc')
+                                                        ->get(),
+                                                    'isAdmin' => false,
+                                                ])->render()
+                                            )),
                                     ]),
 
                                 Section::make('Application Summary')

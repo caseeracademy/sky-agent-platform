@@ -13,8 +13,6 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -31,10 +29,13 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->brandName('Sky Blue Consulting')
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Sky,
             ])
             ->maxContentWidth('full')
+            ->globalSearch(true)
+            ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->navigationGroups([
                 NavigationGroup::make()
                     ->label(AdminNavigationGroup::Dashboard->getLabel()),
@@ -42,6 +43,8 @@ class AdminPanelProvider extends PanelProvider
                     ->label(AdminNavigationGroup::ApplicationManagement->getLabel()),
                 NavigationGroup::make()
                     ->label(AdminNavigationGroup::FinancialManagement->getLabel()),
+                NavigationGroup::make()
+                    ->label(AdminNavigationGroup::ScholarshipManagement->getLabel()),
                 NavigationGroup::make()
                     ->label(AdminNavigationGroup::UserManagement->getLabel()),
                 NavigationGroup::make()
@@ -75,7 +78,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-                CheckUserRole::class . ':super_admin,admin_staff',
+                CheckUserRole::class.':super_admin,admin_staff',
             ]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Programs\Schemas;
 
+use App\Models\Degree;
 use App\Models\University;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -27,8 +28,28 @@ class ProgramForm
                     ->required()
                     ->maxLength(255)
                     ->placeholder('e.g., Computer Science'),
-                Select::make('degree_type')
+
+                Select::make('degree_id')
+                    ->label('Degree Type')
+                    ->relationship('degree', 'name')
                     ->required()
+                    ->searchable()
+                    ->preload()
+                    ->options(function () {
+                        return Degree::where('is_active', true)->pluck('name', 'id');
+                    })
+                    ->createOptionForm([
+                        TextInput::make('name')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('e.g., Bachelor'),
+                        Toggle::make('is_active')
+                            ->label('Active')
+                            ->default(true),
+                    ]),
+
+                Select::make('degree_type')
+                    ->label('Legacy Degree Type')
                     ->options([
                         'Certificate' => 'Certificate',
                         'Diploma' => 'Diploma',
@@ -37,7 +58,8 @@ class ProgramForm
                         'PhD' => 'PhD',
                     ])
                     ->searchable()
-                    ->default('Bachelor'),
+                    ->default('Bachelor')
+                    ->helperText('This field is kept for backward compatibility'),
                 TextInput::make('tuition_fee')
                     ->label('Tuition Fee')
                     ->required()

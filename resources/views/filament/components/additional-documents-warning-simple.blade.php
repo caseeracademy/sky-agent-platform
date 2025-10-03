@@ -179,10 +179,13 @@
     
     <div class="warning-content">
         <p class="warning-description">{{ $request }}</p>
+        <p class="warning-description" style="margin-top: 0.75rem; font-size: 0.8125rem; opacity: 0.95; border-top: 1px dashed #f59e0b; padding-top: 0.75rem;">
+            💡 <strong>Quick Action:</strong> Click "Upload Documents" below to add the required files immediately.
+        </p>
     </div>
     
     <div class="warning-actions">
-        <button onclick="alert('Upload functionality temporarily disabled - see BUGS_TO_SOLVE.md')" class="upload-btn">
+        <button onclick="switchToDocumentReviewAndUpload()" class="upload-btn">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
             </svg>
@@ -193,7 +196,7 @@
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
             </svg>
-            View Documents
+            View Uploaded Documents
         </button>
     </div>
 </div>
@@ -204,8 +207,42 @@
         tabs.forEach(tab => {
             if (tab.textContent.trim() === 'Document Review') {
                 tab.click();
-                return;
             }
         });
+    }
+
+    function switchToDocumentReviewAndUpload() {
+        // First switch to the Document Review tab
+        switchToDocumentTab();
+        
+        // Wait for tab to render, then trigger upload modal
+        setTimeout(() => {
+            // Try multiple selectors to find the upload button
+            const selectors = [
+                'button[wire\\:click*="mountAction"]',
+                'button[wire\\:click*="uploadDocument"]',
+                '[aria-label="Upload Document"]',
+                'button:has(svg):has([d*="M7 16a4 4 0"])', // SVG path matching
+            ];
+            
+            let uploadButton = null;
+            for (const selector of selectors) {
+                try {
+                    uploadButton = document.querySelector(selector);
+                    if (uploadButton && uploadButton.closest('.fi-section-header-actions')) {
+                        break;
+                    }
+                } catch (e) {
+                    continue;
+                }
+            }
+            
+            if (uploadButton) {
+                uploadButton.click();
+            } else {
+                // Fallback: just switch to the tab (user can click upload manually)
+                console.log('Upload modal auto-trigger not available, tab switched successfully');
+            }
+        }, 400);
     }
 </script>

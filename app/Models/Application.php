@@ -22,6 +22,10 @@ class Application extends Model
         'agent_id',
         'assigned_admin_id',
         'status',
+        'commission_type',
+        'reviewed_by',
+        'review_notes',
+        'needs_review',
         'notes',
         'admin_notes',
         'additional_documents_request',
@@ -32,6 +36,20 @@ class Application extends Model
         'submitted_at',
         'reviewed_at',
         'decision_at',
+        // Payment fields
+        'payment_receipt_path',
+        'payment_receipt_uploaded_at',
+        'payment_receipt_uploaded_by',
+        'payment_verified_at',
+        'payment_verified_by',
+        // Offer letter fields
+        'offer_letter_path',
+        'offer_letter_sent_at',
+        'university_response_date',
+        // Rejection fields
+        'rejection_reason',
+        'rejected_at',
+        'rejected_by',
     ];
 
     /**
@@ -46,9 +64,15 @@ class Application extends Model
             'intake_date' => 'date',
             'commission_amount' => 'decimal:2',
             'commission_paid' => 'boolean',
+            'needs_review' => 'boolean',
             'submitted_at' => 'datetime',
             'reviewed_at' => 'datetime',
             'decision_at' => 'datetime',
+            'payment_receipt_uploaded_at' => 'datetime',
+            'payment_verified_at' => 'datetime',
+            'offer_letter_sent_at' => 'datetime',
+            'university_response_date' => 'date',
+            'rejected_at' => 'datetime',
         ];
     }
 
@@ -134,6 +158,14 @@ class Application extends Model
     }
 
     /**
+     * Get the admin who reviewed the application.
+     */
+    public function reviewer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /**
      * Get the university through the program.
      */
     public function university(): \Illuminate\Database\Eloquent\Relations\HasOneThrough
@@ -155,6 +187,46 @@ class Application extends Model
     public function applicationDocuments(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(ApplicationDocument::class);
+    }
+
+    /**
+     * Get the scholarship points for the application.
+     */
+    public function scholarshipPoints(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ScholarshipPoint::class);
+    }
+
+    /**
+     * Get the status history for the application.
+     */
+    public function statusHistory(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ApplicationStatusHistory::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get the user who uploaded payment receipt.
+     */
+    public function paymentReceiptUploader(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'payment_receipt_uploaded_by');
+    }
+
+    /**
+     * Get the user who verified payment.
+     */
+    public function paymentVerifier(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'payment_verified_by');
+    }
+
+    /**
+     * Get the user who rejected the application.
+     */
+    public function rejectedByUser(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
     }
 
     /**
@@ -272,5 +344,90 @@ class Application extends Model
                 'commission_amount' => $this->program->agent_commission,
             ]);
         }
+    }
+
+    /**
+     * Check if application needs initial review (commission type choice).
+     */
+    public function needsReview(): bool
+    {
+        return $this->needs_review && $this->status === 'submitted';
+    }
+
+    /**
+     * Check if application is under review (commission type chosen, awaiting approval).
+     */
+    public function isUnderReview(): bool
+    {
+        return $this->status === 'under_review';
+    }
+
+    /**
+     * Move application to under review status after commission type is chosen.
+     */
+    public function moveToUnderReview(string $commissionType, int $reviewerId, ?string $notes = null): void
+    {
+        $this->update([
+            'status' => 'under_review',
+            'commission_type' => $commissionType,
+            'reviewed_at' => now(),
+            'reviewed_by' => $reviewerId,
+            'review_notes' => $notes,
+            'needs_review' => false,
+        ]);
+    }
+
+    /**
+     * Mark as reviewed with commission type choice.
+     */
+    public function markAsReviewed(string $commissionType, int $reviewerId, ?string $notes = null): void
+    {
+        $this->update([
+            'commission_type' => $commissionType,
+            'reviewed_at' => now(),
+            'reviewed_by' => $reviewerId,
+            'review_notes' => $notes,
+            'needs_review' => false,
+        ]);
+    }
+
+    /**
+     * Check if commission type is scholarship.
+     */
+    public function isScholarshipCommission(): bool
+    {
+        return $this->commission_type === 'scholarship';
+    }
+
+    /**
+     * Check if commission type is money.
+     */
+    public function isMoneyCommission(): bool
+    {
+        return $this->commission_type === 'money';
+    }
+
+    /**
+     * Scope applications that need initial review (commission type choice).
+     */
+    public function scopeNeedsReview(\Illuminate\Database\Eloquent\Builder $query): void
+    {
+        $query->where('needs_review', true)->where('status', 'submitted');
+    }
+
+    /**
+     * Scope applications that are under review (awaiting approval).
+     */
+    public function scopeUnderReview(\Illuminate\Database\Eloquent\Builder $query): void
+    {
+        $query->where('status', 'under_review');
+    }
+
+    /**
+     * Scope applications reviewed by specific admin.
+     */
+    public function scopeReviewedBy(\Illuminate\Database\Eloquent\Builder $query, int $adminId): void
+    {
+        $query->where('reviewed_by', $adminId);
     }
 }

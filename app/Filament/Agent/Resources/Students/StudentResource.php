@@ -33,6 +33,29 @@ class StudentResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    protected static ?string $recordTitleAttribute = 'name';
+
+    protected static int $globalSearchResultsLimit = 20;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'email', 'passport_number', 'first_name', 'last_name', 'phone_number'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return $record->name ?? $record->email;
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        return [
+            'Email' => $record->email,
+            'Phone' => $record->phone_number,
+            'Passport' => $record->passport_number,
+        ];
+    }
+
     public static function form(Schema $schema): Schema
     {
         return StudentForm::configure($schema);

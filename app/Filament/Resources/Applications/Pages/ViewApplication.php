@@ -4,9 +4,9 @@ namespace App\Filament\Resources\Applications\Pages;
 
 use App\Filament\Resources\Applications\ApplicationResource;
 use Filament\Actions\Action;
-use Filament\Actions\EditAction;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
@@ -20,6 +20,77 @@ class ViewApplication extends ViewRecord
 
     protected static ?string $title = 'Application Hub';
 
+    protected function getHeaderActions(): array
+    {
+        $application = $this->getRecord();
+        $statusService = app(\App\Services\ApplicationStatusService::class);
+        $userRole = auth()->user()->role ?? 'guest';
+        $availableActions = $statusService->getAvailableActions($application, $userRole);
+
+        $actions = [];
+
+        foreach ($availableActions as $actionData) {
+            $status = $actionData['status'];
+            $label = $actionData['label'];
+            $color = $actionData['color'];
+            $requiresInput = $actionData['requires_input'];
+
+            $action = Action::make($status)
+                ->label($label)
+                ->color($color);
+
+            // Special handling for offer_received - requires offer letter upload
+            if ($status === 'offer_received') {
+                $action->form([
+                    \Filament\Forms\Components\FileUpload::make('offer_letter')
+                        ->label('📄 Upload Offer Letter')
+                        ->required()
+                        ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'])
+                        ->maxSize(10240) // 10MB
+                        ->disk('public')
+                        ->directory('offer-letters')
+                        ->preserveFilenames()
+                        ->helperText('Upload the official offer letter from the university. Accepted formats: PDF, Images (JPG, PNG). Max size: 10MB'),
+                    Textarea::make('offer_details')
+                        ->label('Offer Details (Optional)')
+                        ->placeholder('Add any additional notes about the offer (deadline, conditions, scholarship amount, etc.)...')
+                        ->rows(4)
+                        ->helperText('These notes will be visible to the agent.'),
+                ])
+                    ->modalHeading('📄 Upload Offer Letter')
+                    ->modalDescription('Upload the official offer letter that the student received from the university.')
+                    ->modalSubmitActionLabel('Upload & Mark as Offer Received')
+                    ->action(function (array $data) use ($status) {
+                        $this->uploadOfferLetterAndChangeStatus($status, $data);
+                    });
+            }
+            // If requires input for other statuses, add modal with form
+            elseif ($requiresInput || $status === 'additional_documents_needed') {
+                $action->form([
+                    Textarea::make('note')
+                        ->label('Document Request Details')
+                        ->placeholder('Describe which documents are needed and why...')
+                        ->required()
+                        ->rows(6)
+                        ->helperText('💡 Be specific about what documents are needed. The agent will see this message.'),
+                ])
+                    ->action(function (array $data) use ($status) {
+                        $this->changeApplicationStatusWithNote($status, $data['note'] ?? null);
+                    });
+            } else {
+                // Direct action without modal
+                $action->requiresConfirmation($status === 'approved')
+                    ->action(function () use ($status) {
+                        $this->changeApplicationStatus($status);
+                    });
+            }
+
+            $actions[] = $action;
+        }
+
+        return $actions;
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema
@@ -32,6 +103,53 @@ class ViewApplication extends ViewRecord
                     ->tabs([
                         Tab::make('Application Overview')
                             ->schema([
+                                // Commission Type Selector (only if needs_review AND commission_type is NULL)
+                                Section::make('Initial Review Required')
+                                    ->schema([
+                                        Placeholder::make('commission_type_selector')
+                                            ->label('')
+                                            ->content(fn ($record) => new \Illuminate\Support\HtmlString(
+                                                view('filament.components.commission-type-selector', [
+                                                    'application' => $record,
+                                                ])->render()
+                                            )),
+                                    ])
+                                    ->visible(fn ($record) => $record->status === 'needs_review' && $record->commission_type === null),
+
+                                // Status Actions now in header - showing current status only
+                                Section::make('Current Status')
+                                    ->schema([
+                                        Placeholder::make('current_status_display')
+                                            ->label('Application Status')
+                                            ->content(function ($record) {
+                                                $statusService = app(\App\Services\ApplicationStatusService::class);
+                                                $allStatuses = \App\Services\ApplicationStatusService::getAllStatuses();
+                                                $currentStatus = $allStatuses[$record->status] ?? ['label' => $record->status, 'color' => 'gray'];
+
+                                                $colorMap = [
+                                                    'success' => 'text-green-600 bg-green-100',
+                                                    'danger' => 'text-red-600 bg-red-100',
+                                                    'warning' => 'text-yellow-600 bg-yellow-100',
+                                                    'info' => 'text-blue-600 bg-blue-100',
+                                                    'gray' => 'text-gray-600 bg-gray-100',
+                                                ];
+
+                                                $colorClass = $colorMap[$currentStatus['color']] ?? $colorMap['gray'];
+
+                                                return new \Illuminate\Support\HtmlString(
+                                                    '<div class="flex items-center gap-3">
+                                                        <span class="text-sm font-semibold">Current Status:</span>
+                                                        <span class="px-4 py-2 rounded-full font-bold text-lg '.$colorClass.'">
+                                                            '.$currentStatus['label'].'
+                                                        </span>
+                                                        <p class="text-sm text-gray-500">Use the action buttons in the page header to change the application status.</p>
+                                                    </div>'
+                                                );
+                                            })
+                                            ->columnSpanFull(),
+                                    ])
+                                    ->visible(fn ($record) => $record->commission_type !== null),
+
                                 Section::make('Basic Information')
                                     ->schema([
                                         Placeholder::make('application_number')
@@ -41,10 +159,17 @@ class ViewApplication extends ViewRecord
                                             ->label('Status')
                                             ->content(function ($record) {
                                                 $statusColors = [
+                                                    'needs_review' => 'warning',
                                                     'pending' => 'warning',
                                                     'submitted' => 'info',
                                                     'under_review' => 'warning',
-                                                    'additional_documents_required' => 'danger',
+                                                    'additional_documents_needed' => 'danger',
+                                                    'waiting_to_apply' => 'warning',
+                                                    'applied' => 'info',
+                                                    'offer_received' => 'success',
+                                                    'payment_pending' => 'warning',
+                                                    'payment_approval' => 'info',
+                                                    'ready_for_approval' => 'info',
                                                     'approved' => 'success',
                                                     'rejected' => 'danger',
                                                     'enrolled' => 'success',
@@ -103,26 +228,16 @@ class ViewApplication extends ViewRecord
                             ->schema([
                                 Section::make('Personal Details')
                                     ->schema([
-                                        Placeholder::make('student_name')
-                                            ->label('Student Name')
-                                            ->content(fn ($record) => $record->student->name),
-                                        Placeholder::make('student_email')
-                                            ->label('Email')
-                                            ->content(fn ($record) => $record->student->email),
-                                        Placeholder::make('student_phone')
-                                            ->label('Phone')
-                                            ->content(fn ($record) => $record->student->phone ?? 'Not provided'),
-                                        Placeholder::make('student_nationality')
-                                            ->label('Nationality')
-                                            ->content(fn ($record) => $record->student->nationality ?? 'Not provided'),
-                                        Placeholder::make('student_dob')
-                                            ->label('Date of Birth')
-                                            ->content(fn ($record) => $record->student->date_of_birth ? $record->student->date_of_birth->format('M j, Y') : 'Not provided'),
-                                        Placeholder::make('student_gender')
-                                            ->label('Gender')
-                                            ->content(fn ($record) => $record->student->gender ? ucfirst($record->student->gender) : 'Not provided'),
-                                    ])
-                                    ->columns(3),
+                                        Placeholder::make('student_info_display')
+                                            ->label('')
+                                            ->content(fn ($record) => new \Illuminate\Support\HtmlString(
+                                                view('filament.components.application-student-info', [
+                                                    'student' => $record->student,
+                                                    'studentId' => $record->student_id,
+                                                    'isAdmin' => true,
+                                                ])->render()
+                                            )),
+                                    ]),
                             ]),
 
                         Tab::make('Document Review')
@@ -387,50 +502,229 @@ class ViewApplication extends ViewRecord
             ]);
     }
 
-    protected function getHeaderActions(): array
+    /**
+     * Handle status change from beautiful status buttons.
+     */
+    public function changeApplicationStatus(string $newStatus, ?string $reason = null, ?array $data = null): void
     {
-        $actions = [];
+        $statusService = app(\App\Services\ApplicationStatusService::class);
+        $application = $this->getRecord();
 
-        // Only show edit action if application is not approved (locking rule)
-        if ($this->getRecord()->status !== 'approved') {
-            $actions[] = EditAction::make();
+        // Validate transition
+        if (! $statusService->canTransitionTo($application, $newStatus)) {
+            Notification::make()
+                ->title('Invalid Status Transition')
+                ->body('This status change is not allowed.')
+                ->danger()
+                ->send();
+
+            return;
         }
 
-        // Add action to request additional documents
-        if (in_array($this->getRecord()->status, ['submitted', 'under_review'])) {
-            $actions[] = Action::make('requestAdditionalDocuments')
-                ->label('Request Additional Documents')
-                ->icon('heroicon-o-exclamation-triangle')
-                ->color('warning')
-                ->modalHeading('Request Additional Documents')
-                ->modalDescription('Specify what documents are missing and provide details to the agent.')
-                ->modalSubmitActionLabel('Send Request to Agent')
-                ->form([
-                    Textarea::make('additional_documents_request')
-                        ->label('Document Request Details')
-                        ->placeholder('Please specify what documents are missing. For example: "Please provide an updated transcript with final grades for semester 4" or "We need a copy of your IELTS certificate with a score of 6.5 or higher".')
-                        ->required()
-                        ->rows(4)
-                        ->helperText('Be specific about what documents are needed and any requirements or deadlines.'),
-                ])
-                ->action(function (array $data) {
-                    $this->getRecord()->update([
-                        'status' => 'additional_documents_required',
-                        'additional_documents_request' => $data['additional_documents_request'],
-                        'reviewed_at' => now(),
-                    ]);
+        // Perform transition
+        $success = $statusService->transitionTo($application, $newStatus, $reason, $data);
 
-                    // Log the status change
-                    $this->getRecord()->applicationLogs()->create([
-                        'user_id' => auth()->id(),
-                        'note' => 'Application status changed to "Additional Documents Required" by admin.',
-                        'status_change' => 'additional_documents_required',
-                    ]);
+        if ($success) {
+            Notification::make()
+                ->title('✅ Status Updated')
+                ->body('Application status updated successfully! Refreshing page...')
+                ->success()
+                ->duration(2000)
+                ->send();
 
-                    $this->notify('success', 'Document request sent to agent successfully.');
-                });
+            // Redirect to refresh page and show new status immediately
+            $this->redirect($this->getResource()::getUrl('view', ['record' => $application->id]));
+        } else {
+            Notification::make()
+                ->title('❌ Update Failed')
+                ->body('Failed to update application status.')
+                ->danger()
+                ->send();
+        }
+    }
+
+    /**
+     * Listen for events from components.
+     */
+    protected function getListeners(): array
+    {
+        return [
+            'changeStatus' => 'handleStatusChange',
+            'selectCommissionType' => 'handleCommissionTypeSelection',
+        ];
+    }
+
+    /**
+     * Handle commission type selection.
+     */
+    public function selectCommissionType(string $commissionType): void
+    {
+        $application = $this->getRecord();
+
+        // Validate we're in needs_review status
+        if ($application->status !== 'needs_review') {
+            Notification::make()
+                ->title('Invalid Action')
+                ->body('Commission type can only be set during initial review.')
+                ->danger()
+                ->send();
+
+            return;
         }
 
-        return $actions;
+        try {
+            // Update commission type and amount
+            $application->commission_type = $commissionType;
+
+            if ($commissionType === 'scholarship') {
+                $application->commission_amount = 0;
+            } else {
+                $application->commission_amount = $application->program->agent_commission ?? 0;
+            }
+
+            $application->save();
+
+            // Transition to submitted status
+            $statusService = app(\App\Services\ApplicationStatusService::class);
+            $statusService->transitionTo(
+                $application,
+                'submitted',
+                "Commission type set to: {$commissionType}"
+            );
+
+            Notification::make()
+                ->title('✅ Commission Type Set')
+                ->body('Commission type set successfully! Refreshing page...')
+                ->success()
+                ->duration(2000)
+                ->send();
+
+            // Redirect to refresh page and show new status immediately
+            $this->redirect($this->getResource()::getUrl('view', ['record' => $application->id]));
+
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Error')
+                ->body('Failed to set commission type: '.$e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    /**
+     * Handle status change event.
+     */
+    public function handleStatusChange($status = null, $requiresInput = false, $requiresConfirmation = false): void
+    {
+        if (! $status) {
+            return;
+        }
+
+        // If requires input (like additional_documents_needed), show modal
+        if ($requiresInput || $status === 'additional_documents_needed') {
+            $this->dispatch('open-status-modal', status: $status);
+
+            return;
+        }
+
+        // If requires confirmation (like approved), show confirmation modal
+        if ($requiresConfirmation || $status === 'approved') {
+            $this->dispatch('open-confirmation-modal', status: $status);
+
+            return;
+        }
+
+        // Otherwise, change status directly
+        $this->changeApplicationStatus($status);
+    }
+
+    /**
+     * Change application status with optional note.
+     */
+    public function changeApplicationStatusWithNote(string $status, ?string $note = null): void
+    {
+        try {
+            $application = $this->getRecord();
+            $statusService = app(\App\Services\ApplicationStatusService::class);
+
+            // For additional_documents_needed, save the note in additional_documents_request field
+            if ($status === 'additional_documents_needed' && $note) {
+                $application->additional_documents_request = $note;
+                $application->save();
+            }
+
+            $statusService->transitionTo($application, $status, $note ?? "Status changed to {$status}");
+
+            Notification::make()
+                ->title('✅ Status Updated')
+                ->body('Application status changed successfully! Refreshing page...')
+                ->success()
+                ->duration(2000)
+                ->send();
+
+            // Redirect to refresh page and show new status immediately
+            $this->redirect($this->getResource()::getUrl('view', ['record' => $application->id]));
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Error')
+                ->body('Failed to update status: '.$e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    /**
+     * Upload offer letter and change status to offer_received.
+     */
+    public function uploadOfferLetterAndChangeStatus(string $status, array $data): void
+    {
+        try {
+            $application = $this->getRecord();
+            $statusService = app(\App\Services\ApplicationStatusService::class);
+
+            // Save offer letter path
+            $offerLetterPath = $data['offer_letter'] ?? null;
+            $offerDetails = $data['offer_details'] ?? null;
+
+            if ($offerLetterPath) {
+                // Create application document for the offer letter
+                $document = \App\Models\ApplicationDocument::create([
+                    'application_id' => $application->id,
+                    'title' => 'Offer Letter',
+                    'uploaded_by_user_id' => auth()->id(),
+                    'original_filename' => basename($offerLetterPath),
+                    'disk' => 'public',
+                    'path' => $offerLetterPath,
+                    'file_size' => \Storage::disk('public')->size($offerLetterPath),
+                    'mime_type' => \Storage::disk('public')->mimeType($offerLetterPath),
+                ]);
+
+                // Change status with offer details in the note
+                $note = "📄 Offer letter uploaded (Document ID: {$document->id})";
+                if ($offerDetails) {
+                    $note .= "\n\n📝 Offer Details:\n{$offerDetails}";
+                }
+
+                $statusService->transitionTo($application, $status, $note);
+
+                Notification::make()
+                    ->title('✅ Offer Letter Uploaded!')
+                    ->body('Offer letter uploaded successfully! Refreshing page...')
+                    ->success()
+                    ->duration(2000)
+                    ->send();
+
+                // Redirect to refresh page and show new status immediately
+                $this->redirect($this->getResource()::getUrl('view', ['record' => $application->id]));
+            } else {
+                throw new \Exception('Offer letter file is required.');
+            }
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('❌ Upload Failed')
+                ->body('Failed to upload offer letter: '.$e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 }

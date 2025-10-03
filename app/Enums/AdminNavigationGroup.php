@@ -9,6 +9,7 @@ enum AdminNavigationGroup: string implements HasLabel
     case Dashboard = 'dashboard';
     case ApplicationManagement = 'application_management';
     case FinancialManagement = 'financial_management';
+    case ScholarshipManagement = 'scholarship_management';
     case UserManagement = 'user_management';
     case SystemSetup = 'system_setup';
 
@@ -18,9 +19,9 @@ enum AdminNavigationGroup: string implements HasLabel
             self::Dashboard => 'Dashboard & Reporting',
             self::ApplicationManagement => 'Application Management',
             self::FinancialManagement => 'Financial Management',
+            self::ScholarshipManagement => 'Scholarship Management',
             self::UserManagement => 'User Management',
             self::SystemSetup => 'System Setup',
         };
     }
-
 }

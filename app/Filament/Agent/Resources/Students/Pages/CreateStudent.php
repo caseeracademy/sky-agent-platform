@@ -104,7 +104,10 @@ class CreateStudent extends CreateRecord
             'student_id' => $student->id,
             'program_id' => $applicationData['program_id'],
             'agent_id' => auth()->id(),
-            'status' => 'pending',
+            'status' => 'needs_review',
+            'commission_type' => null,
+            'needs_review' => true,
+            'submitted_at' => now(),
         ]);
 
         // Store the created application for redirect

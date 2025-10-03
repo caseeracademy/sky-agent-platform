@@ -9,6 +9,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Section;
@@ -37,13 +38,13 @@ class ViewApplication extends ViewRecord
                     ->tabs([
                         Tab::make('Application Overview')
                             ->schema([
-                                // Warning panel for additional documents required - FIRST SECTION
+                                // Warning panel for additional documents needed - FIRST SECTION
                                 Section::make('Document Request')
                                     ->schema([
                                         Placeholder::make('additional_documents_warning')
                                             ->label('')
                                             ->content(function ($record) {
-                                                if ($record->status !== 'additional_documents_required' || ! $record->additional_documents_request) {
+                                                if ($record->status !== 'additional_documents_needed' || ! $record->additional_documents_request) {
                                                     return '';
                                                 }
 
@@ -53,9 +54,23 @@ class ViewApplication extends ViewRecord
                                                     ])->render()
                                                 );
                                             })
-                                            ->visible(fn ($record) => $record->status === 'additional_documents_required' && $record->additional_documents_request),
+                                            ->visible(fn ($record) => $record->status === 'additional_documents_needed' && $record->additional_documents_request),
                                     ])
-                                    ->visible(fn ($record) => $record->status === 'additional_documents_required' && $record->additional_documents_request),
+                                    ->visible(fn ($record) => $record->status === 'additional_documents_needed' && $record->additional_documents_request),
+
+                                // Offer Letter Received Section - Shows when offer is available
+                                Section::make('🎉 Offer Letter Received!')
+                                    ->schema([
+                                        Placeholder::make('offer_letter_display')
+                                            ->label('')
+                                            ->content(function ($record) {
+                                                return view('filament.agent.components.offer-letter-section', [
+                                                    'application' => $record,
+                                                ]);
+                                            })
+                                            ->columnSpanFull(),
+                                    ])
+                                    ->visible(fn ($record) => $record->status === 'offer_received'),
 
                                 Section::make('Basic Information')
                                     ->schema([
@@ -66,10 +81,17 @@ class ViewApplication extends ViewRecord
                                             ->label('Status')
                                             ->content(function ($record) {
                                                 $statusColors = [
+                                                    'needs_review' => 'warning',
                                                     'pending' => 'warning',
                                                     'submitted' => 'info',
                                                     'under_review' => 'warning',
-                                                    'additional_documents_required' => 'danger',
+                                                    'additional_documents_needed' => 'danger',
+                                                    'waiting_to_apply' => 'warning',
+                                                    'applied' => 'info',
+                                                    'offer_received' => 'success',
+                                                    'payment_pending' => 'warning',
+                                                    'payment_approval' => 'info',
+                                                    'ready_for_approval' => 'info',
                                                     'approved' => 'success',
                                                     'rejected' => 'danger',
                                                     'enrolled' => 'success',
@@ -306,6 +328,11 @@ class ViewApplication extends ViewRecord
                                                     ->directory('application-documents')
                                                     ->preserveFilenames()
                                                     ->helperText('Accepted formats: PDF, Images (JPG, PNG), Word documents. Max size: 10MB'),
+                                                Toggle::make('resubmit_application')
+                                                    ->label('Resubmit Application After Upload')
+                                                    ->helperText('Check this to automatically resubmit your application after uploading this document. The admin will be notified to review your updated application.')
+                                                    ->default(true)
+                                                    ->visible(fn (ViewApplication $livewire) => $livewire->getRecord()->status === 'additional_documents_needed'),
                                             ])
                                             ->action(function (array $data, ViewApplication $livewire): void {
                                                 $record = $livewire->getRecord();
@@ -330,16 +357,36 @@ class ViewApplication extends ViewRecord
                                                     'mime_type' => $mimeType,
                                                 ]);
 
+                                                // Check if application should be resubmitted
+                                                $shouldResubmit = $data['resubmit_application'] ?? false;
+                                                $wasResubmitted = false;
+
+                                                if ($shouldResubmit && $record->status === 'additional_documents_needed') {
+                                                    // Use ApplicationStatusService to transition to submitted
+                                                    $statusService = app(\App\Services\ApplicationStatusService::class);
+                                                    $statusService->transitionTo($record, 'submitted', 'Documents uploaded and resubmitted');
+                                                    $wasResubmitted = true;
+                                                }
+
+                                                // Build notification message
+                                                $notificationTitle = $wasResubmitted
+                                                    ? 'Document uploaded & application resubmitted!'
+                                                    : 'Document uploaded successfully';
+
+                                                $notificationBody = $wasResubmitted
+                                                    ? 'The document "'.$data['title'].'" has been uploaded and your application has been resubmitted for admin review.'
+                                                    : 'The document "'.$data['title'].'" has been uploaded to this application.';
+
                                                 Notification::make()
-                                                    ->title('Document uploaded successfully')
-                                                    ->body('The document "'.$data['title'].'" has been uploaded to this application.')
+                                                    ->title($notificationTitle)
+                                                    ->body($notificationBody)
                                                     ->success()
                                                     ->send();
 
-                                                // Refresh the page to show the new document
+                                                // Refresh the page to show the new document and updated status
                                                 $livewire->dispatch('$refresh');
                                             })
-                                            ->successNotificationTitle('Document uploaded!'),
+                                            ->successNotificationTitle('Success!'),
                                     ]),
                             ]),
 
@@ -368,13 +415,171 @@ class ViewApplication extends ViewRecord
     protected function getHeaderActions(): array
     {
         $actions = [];
+        $application = $this->getRecord();
+        $statusService = app(\App\Services\ApplicationStatusService::class);
+        $userRole = auth()->user()->role ?? 'agent_owner';
+
+        // Get available status actions from the service
+        $availableActions = $statusService->getAvailableActions($application, $userRole);
+
+        // Add status action buttons
+        foreach ($availableActions as $actionData) {
+            $status = $actionData['status'];
+            $label = $actionData['label'];
+            $color = $actionData['color'];
+
+            $action = Action::make($status)
+                ->label($label)
+                ->color($color);
+
+            // Special handling for payment_approval - requires receipt upload
+            if ($status === 'payment_approval') {
+                $action->form([
+                    \Filament\Forms\Components\FileUpload::make('payment_receipt')
+                        ->label('📄 Upload Payment Receipt')
+                        ->required()
+                        ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'])
+                        ->maxSize(10240) // 10MB
+                        ->disk('public')
+                        ->directory('payment-receipts')
+                        ->preserveFilenames()
+                        ->helperText('Upload proof of payment (bank receipt, transfer confirmation, etc.). Accepted formats: PDF, Images. Max size: 10MB'),
+                    \Filament\Forms\Components\Textarea::make('payment_notes')
+                        ->label('Payment Notes (Optional)')
+                        ->placeholder('Add any notes about the payment (transaction ID, payment date, amount, etc.)...')
+                        ->rows(4)
+                        ->helperText('These notes will help the admin verify the payment.'),
+                ])
+                    ->modalHeading('💰 Student Paid - Upload Receipt')
+                    ->modalDescription('Upload the payment receipt to confirm the student has made the payment.')
+                    ->modalSubmitActionLabel('Upload Receipt & Submit for Approval')
+                    ->action(function (array $data) use ($status) {
+                        $this->uploadPaymentReceiptAndChangeStatus($status, $data);
+                    });
+            } else {
+                // Other actions just need confirmation
+                $action->requiresConfirmation()
+                    ->modalHeading('Confirm Status Change')
+                    ->modalDescription("Are you sure you want to change the status to: {$label}?")
+                    ->action(function () use ($status) {
+                        $this->changeApplicationStatus($status);
+                    });
+            }
+
+            $actions[] = $action;
+        }
 
         // Only show edit action if application can be edited
-        if ($this->getRecord()->canBeEdited()) {
+        if ($application->canBeEdited()) {
             $actions[] = EditAction::make();
         }
 
         return $actions;
+    }
+
+    /**
+     * Change application status.
+     */
+    public function changeApplicationStatus(string $newStatus): void
+    {
+        try {
+            $application = $this->getRecord();
+            $statusService = app(\App\Services\ApplicationStatusService::class);
+
+            // Validate transition
+            if (! $statusService->canTransitionTo($application, $newStatus)) {
+                Notification::make()
+                    ->title('Invalid Status Change')
+                    ->body('This status change is not allowed from the current status.')
+                    ->danger()
+                    ->send();
+
+                return;
+            }
+
+            // Perform transition
+            $statusService->transitionTo($application, $newStatus, 'Status changed by agent');
+
+            Notification::make()
+                ->title('✅ Status Updated!')
+                ->body('Application status has been updated successfully. Refreshing page...')
+                ->success()
+                ->send();
+
+            // Redirect to refresh the page and show new status
+            $this->redirect($this->getResource()::getUrl('view', ['record' => $application->id]));
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('❌ Update Failed')
+                ->body('Failed to update status: '.$e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    /**
+     * Upload payment receipt and change status to payment_approval.
+     */
+    public function uploadPaymentReceiptAndChangeStatus(string $status, array $data): void
+    {
+        try {
+            $application = $this->getRecord();
+            $statusService = app(\App\Services\ApplicationStatusService::class);
+
+            // Validate we're in offer_received status (simplified workflow)
+            if ($application->status !== 'offer_received') {
+                Notification::make()
+                    ->title('Invalid Action')
+                    ->body('This action is only available when the status is "Offer Received".')
+                    ->danger()
+                    ->send();
+
+                return;
+            }
+
+            $receiptPath = $data['payment_receipt'] ?? null;
+            $paymentNotes = $data['payment_notes'] ?? null;
+
+            if ($receiptPath) {
+                // Create application document for the payment receipt
+                $document = \App\Models\ApplicationDocument::create([
+                    'application_id' => $application->id,
+                    'title' => 'Payment Receipt',
+                    'uploaded_by_user_id' => auth()->id(),
+                    'original_filename' => basename($receiptPath),
+                    'disk' => 'public',
+                    'path' => $receiptPath,
+                    'file_size' => \Storage::disk('public')->size($receiptPath),
+                    'mime_type' => \Storage::disk('public')->mimeType($receiptPath),
+                ]);
+
+                // Change status with payment notes
+                $note = "💰 Payment receipt uploaded by agent (Document ID: {$document->id})";
+                if ($paymentNotes) {
+                    $note .= "\n\n📝 Payment Notes:\n{$paymentNotes}";
+                }
+
+                $statusService->transitionTo($application, $status, $note);
+
+                Notification::make()
+                    ->title('✅ Payment Receipt Uploaded!')
+                    ->body('Payment receipt uploaded successfully. Status changed to "Awaiting Payment Approval". Refreshing page...')
+                    ->success()
+                    ->duration(3000)
+                    ->send();
+
+                // Redirect to refresh the page and show new status
+                $this->redirect($this->getResource()::getUrl('view', ['record' => $application->id]));
+            } else {
+                throw new \Exception('Payment receipt is required.');
+            }
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('❌ Upload Failed')
+                ->body('Failed to upload payment receipt: '.$e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 
     public function handleReplaceDocument($documentId): void

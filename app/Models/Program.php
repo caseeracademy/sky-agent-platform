@@ -16,11 +16,12 @@ class Program extends Model
      */
     protected $fillable = [
         'university_id',
+        'degree_id',
         'name',
         'tuition_fee',
         'agent_commission',
         'system_commission',
-        'degree_type',
+        'degree_type', // Keep for backward compatibility during transition
         'is_active',
     ];
 
@@ -45,6 +46,14 @@ class Program extends Model
     public function university(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(University::class);
+    }
+
+    /**
+     * Get the degree for this program.
+     */
+    public function degree(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Degree::class);
     }
 
     /**

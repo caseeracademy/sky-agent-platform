@@ -1,28 +1,42 @@
 # Bugs To Solve
 
-## Critical Issues
+## Resolved Issues
 
-### 1. Livewire Multiple Root Elements Error - CRITICAL
-**Status**: 🔴 UNSOLVED - TEMPORARY FIX APPLIED  
-**Error**: `Livewire\Features\SupportMultipleRootElementDetection\MultipleRootElementsDetectedException`  
-**Description**: Livewire only supports one HTML element per component. Multiple root elements detected for component: [app.filament.agent.resources.applications.pages.view-application]  
-**Impact**: Application details page crashes when trying to view applications with additional documents required status  
-**URL**: http://sky.test/agent/applications/7  
-**Attempts Made**:
+### 1. Document Upload on Application Overview - SOLVED ✅
+**Status**: 🟢 SOLVED  
+**Previous Error**: Upload button non-functional in "Additional Documents Required" warning banner  
+**Description**: When application status is "additional_documents_required", warning banner appeared but upload button was disabled  
+**Impact**: Agents couldn't upload requested documents from the overview screen  
+**URL**: http://sky.test/agent/applications/{id}  
+
+**Previous Attempts**:
+- ❌ Tried to add modal directly to warning banner (Livewire multiple root elements error)
 - ❌ Separated warning panel from modal into different components
 - ❌ Wrapped everything in single root div
-- ❌ Moved styles inside root element
 - ❌ Created unified component with warning + modal
-- ❌ Fixed indentation and structure
-- ❌ All approaches still result in multiple root elements error
+- ❌ All approaches resulted in Livewire errors
 
-**Current Status**: TEMPORARY FIX - Button shows without modal functionality to prevent page crashes
+**Final Solution**: Smart tab switching + automatic resubmission
+- ✅ "Upload Documents" button now switches to "Document Review" tab
+- ✅ Automatically triggers the existing upload modal after tab switch
+- ✅ Added "Resubmit Application After Upload" toggle (default: ON)
+- ✅ Agents can upload documents and resubmit application in one action
+- ✅ Status changes from "additional_documents_required" → "submitted" automatically
+- ✅ Leverages existing, working upload functionality
+- ✅ No Livewire conflicts
+- ✅ Clean, maintainable code with fallback support
 
-**Root Cause**: Complex modal structure with JavaScript still violates Livewire's single root element requirement despite multiple attempts.
+**Files Modified**:
+- `resources/views/filament/components/additional-documents-warning-simple.blade.php` - Enhanced JavaScript for smart tab switching
+- `app/Filament/Agent/Resources/Applications/Pages/ViewApplication.php` - Added resubmission toggle & logic
+- `DOCUMENT_UPLOAD_FIX.md` - Comprehensive documentation of the issue and solution
+- `IMPLEMENTATION_SUMMARY.md` - Executive summary
 
-**Next Approach**: Need to completely redesign the approach - possibly using Livewire's built-in modal system or moving to a different architectural pattern.
+**Solution Date**: 2025-10-01
+**Documentation**: See DOCUMENT_UPLOAD_FIX.md for complete technical analysis
 
-**Priority**: 🔴 CRITICAL - Blocks core functionality
-**Date Reported**: 2025-09-30
-**Last Attempt**: 2025-09-30 21:45:00 UTC
-**Temporary Fix Applied**: 2025-09-30 22:00:00 UTC
+---
+
+## Critical Issues
+
+_No critical issues at this time_

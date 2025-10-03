@@ -4,18 +4,16 @@ namespace App\Providers\Filament;
 
 use App\Enums\AgentNavigationGroup;
 use App\Http\Middleware\EnsureUserIsAgent;
+use Filament\Auth\Pages\Login;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Auth\Pages\Login;
 use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -31,10 +29,12 @@ class AgentPanelProvider extends PanelProvider
             ->id('agent')
             ->path('agent')
             ->login(Login::class)
-            ->brandName('Agent Portal')
+            ->brandName('Sky Blue Consulting')
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Sky,
             ])
+            ->globalSearch(true)
+            ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->navigationGroups([
                 NavigationGroup::make()
                     ->label(AgentNavigationGroup::Dashboard->getLabel()),
@@ -56,6 +56,7 @@ class AgentPanelProvider extends PanelProvider
             ->widgets([
                 \App\Filament\Agent\Widgets\AgentPersonalStats::class,
                 \App\Filament\Agent\Widgets\AgentCommissionOverview::class,
+                \App\Filament\Agent\Widgets\ScholarshipProgress::class,
                 \App\Filament\Agent\Widgets\AgentPerformanceChart::class,
                 \App\Filament\Agent\Widgets\AgentRecentApplications::class,
             ])

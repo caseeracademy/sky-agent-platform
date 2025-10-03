@@ -27,23 +27,111 @@ class StudentForm
                 Section::make('Basic Information')
                     ->description('Student personal details and contact information')
                     ->schema([
-                        // Row 1: Name fields
+                        // Row 1: Name fields (First Name, Surname) - fills 2 of 3 columns
                         TextInput::make('first_name')
                             ->label('First Name')
                             ->required()
                             ->maxLength(255)
-                            ->placeholder('e.g., John'),
-                        TextInput::make('middle_name')
-                            ->label('Middle Name')
-                            ->maxLength(255)
-                            ->placeholder('e.g., Michael (optional)'),
+                            ->placeholder('e.g., John')
+                            ->columnSpan(1),
                         TextInput::make('last_name')
-                            ->label('Last Name')
+                            ->label('Surname')
                             ->required()
                             ->maxLength(255)
-                            ->placeholder('e.g., Smith'),
+                            ->placeholder('e.g., Smith')
+                            ->columnSpan(1),
+                        Hidden::make('middle_name')
+                            ->default(null)
+                            ->columnSpan(1),
 
-                        // Row 2: Contact fields
+                        // Row 2: Profile Image, Country, Gender
+                        FileUpload::make('profile_image')
+                            ->label('Profile Picture')
+                            ->image()
+                            ->disk('public')
+                            ->directory('student-profiles')
+                            ->visibility('public')
+                            ->imageEditor()
+                            ->circleCropper()
+                            ->maxSize(2048) // 2MB
+                            ->helperText('Upload student photo (Max 2MB)')
+                            ->columnSpan(1),
+                        Select::make('country_of_residence')
+                            ->label('Country of Residence')
+                            ->required()
+                            ->options([
+                                'Afghanistan' => 'Afghanistan',
+                                'Albania' => 'Albania',
+                                'Algeria' => 'Algeria',
+                                'Argentina' => 'Argentina',
+                                'Australia' => 'Australia',
+                                'Austria' => 'Austria',
+                                'Bangladesh' => 'Bangladesh',
+                                'Belgium' => 'Belgium',
+                                'Brazil' => 'Brazil',
+                                'Canada' => 'Canada',
+                                'Chile' => 'Chile',
+                                'China' => 'China',
+                                'Colombia' => 'Colombia',
+                                'Croatia' => 'Croatia',
+                                'Czech Republic' => 'Czech Republic',
+                                'Denmark' => 'Denmark',
+                                'Egypt' => 'Egypt',
+                                'Finland' => 'Finland',
+                                'France' => 'France',
+                                'Germany' => 'Germany',
+                                'Greece' => 'Greece',
+                                'India' => 'India',
+                                'Indonesia' => 'Indonesia',
+                                'Ireland' => 'Ireland',
+                                'Israel' => 'Israel',
+                                'Italy' => 'Italy',
+                                'Japan' => 'Japan',
+                                'Malaysia' => 'Malaysia',
+                                'Mexico' => 'Mexico',
+                                'Netherlands' => 'Netherlands',
+                                'New Zealand' => 'New Zealand',
+                                'Nigeria' => 'Nigeria',
+                                'Norway' => 'Norway',
+                                'Pakistan' => 'Pakistan',
+                                'Peru' => 'Peru',
+                                'Philippines' => 'Philippines',
+                                'Poland' => 'Poland',
+                                'Portugal' => 'Portugal',
+                                'Romania' => 'Romania',
+                                'Russia' => 'Russia',
+                                'Saudi Arabia' => 'Saudi Arabia',
+                                'Singapore' => 'Singapore',
+                                'South Africa' => 'South Africa',
+                                'South Korea' => 'South Korea',
+                                'Spain' => 'Spain',
+                                'Sweden' => 'Sweden',
+                                'Switzerland' => 'Switzerland',
+                                'Thailand' => 'Thailand',
+                                'Turkey' => 'Turkey',
+                                'Ukraine' => 'Ukraine',
+                                'United Arab Emirates' => 'United Arab Emirates',
+                                'United Kingdom' => 'United Kingdom',
+                                'United States' => 'United States',
+                                'Vietnam' => 'Vietnam',
+                                'Other' => 'Other',
+                            ])
+                            ->placeholder('Select country')
+                            ->searchable()
+                            ->columnSpan(1),
+                        Select::make('gender')
+                            ->label('Gender')
+                            ->required()
+                            ->options([
+                                'male' => 'Male',
+                                'female' => 'Female',
+                                'other' => 'Other',
+                                'prefer_not_to_say' => 'Prefer not to say',
+                            ])
+                            ->placeholder('Select gender')
+                            ->columnSpan(1),
+
+                        // Row 3: Contact fields
                         TextInput::make('mothers_name')
                             ->label("Mother's Name")
                             ->required()
@@ -62,7 +150,7 @@ class StudentForm
                             ->maxLength(255)
                             ->placeholder('e.g., +1 (555) 123-4567'),
 
-                        // Row 3: Identity fields
+                        // Row 4: Identity fields
                         TextInput::make('passport_number')
                             ->label('Passport Number')
                             ->required()

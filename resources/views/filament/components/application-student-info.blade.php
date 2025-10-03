@@ -1,4 +1,4 @@
-@props(['student', 'studentId'])
+@props(['student', 'studentId', 'isAdmin' => false])
 
 <style>
     .student-info-card {
@@ -26,6 +26,13 @@
         justify-content: center;
         font-size: 1.5rem;
         flex-shrink: 0;
+        overflow: hidden;
+    }
+    
+    .student-avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
     
     .student-content {
@@ -144,7 +151,11 @@
 
 <div class="student-info-card">
     <div class="student-icon-box">
-        👤
+        @if($student->profile_image)
+            <img src="{{ $student->avatar_url }}" alt="{{ $student->name }}" class="student-avatar-img">
+        @else
+            <img src="{{ asset('images/default-avatar.svg') }}" alt="{{ $student->name }}" class="student-avatar-img">
+        @endif
     </div>
     
     <div class="student-content">
@@ -202,7 +213,7 @@
     </div>
     
     <div class="student-actions">
-        <a href="{{ route('filament.agent.resources.students.view', $studentId) }}" 
+        <a href="{{ $isAdmin ? route('filament.admin.resources.students.view', $studentId) : route('filament.agent.resources.students.view', $studentId) }}" 
            class="student-btn student-details-btn">
             <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>

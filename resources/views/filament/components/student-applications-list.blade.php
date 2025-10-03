@@ -1,262 +1,207 @@
-@props(['applications'])
+@props(['applications', 'isAdmin' => false])
 
 <style>
     .application-card {
-        margin-bottom: 1.25rem !important;
-        padding: 1.25rem !important;
-        border: 2px solid #e5e7eb !important;
-        border-radius: 0.75rem !important;
-        background: #ffffff !important;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
-        transition: all 0.2s ease !important;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        background: white;
+        margin-bottom: 1.25rem;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
     
     .application-card:hover {
-        border-color: #93c5fd !important;
-        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1) !important;
-        transform: translateY(-1px) !important;
+        border-color: #93c5fd;
+        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
+        transform: translateY(-1px);
     }
     
-    .application-icon-box {
-        width: 60px !important;
-        height: 60px !important;
-        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
-        border-radius: 0.625rem !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        font-size: 2rem !important;
-        flex-shrink: 0 !important;
+    .application-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
     }
     
-    .application-content {
-        flex: 1 !important;
-        min-width: 0 !important;
-        padding-left: 1rem !important;
+    .application-title-section {
+        flex: 1;
+        min-width: 0;
     }
     
-    .application-title {
-        font-size: 1rem !important;
-        font-weight: 700 !important;
-        color: #111827 !important;
-        margin-bottom: 0.375rem !important;
-        line-height: 1.4 !important;
+    .application-program-name {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #111827;
+        margin: 0 0 0.25rem 0;
+        line-height: 1.4;
     }
     
-    .application-subtitle {
-        font-size: 0.8125rem !important;
-        color: #6b7280 !important;
-        margin-bottom: 0.625rem !important;
-        word-break: break-all !important;
-        font-weight: 500 !important;
+    .application-university-name {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin: 0;
     }
     
-    .application-meta {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        gap: 0.75rem !important;
-        align-items: center !important;
-        margin-bottom: 0.5rem !important;
+    .application-details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
     }
     
-    .application-meta-item {
-        display: flex !important;
-        align-items: center !important;
-        gap: 0.375rem !important;
-        font-size: 0.75rem !important;
-        color: #6b7280 !important;
+    .application-detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
     }
     
-    .application-meta-icon {
-        width: 0.875rem !important;
-        height: 0.875rem !important;
-        color: #9ca3af !important;
+    .application-detail-label {
+        font-size: 0.75rem;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
     }
     
-    .application-badges {
-        display: flex !important;
-        gap: 0.375rem !important;
-        flex-wrap: wrap !important;
+    .application-detail-value {
+        font-size: 0.875rem;
+        color: #111827;
+        font-weight: 500;
     }
     
-    .application-badge {
-        padding: 0.25rem 0.625rem !important;
-        border-radius: 0.375rem !important;
-        font-size: 0.6875rem !important;
-        font-weight: 600 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.025em !important;
-    }
-    
-    .badge-status {
-        background: #f3f4f6 !important;
-        color: #374151 !important;
-    }
-    
-    .badge-commission {
-        background: #dcfce7 !important;
-        color: #166534 !important;
-    }
-    
-    .badge-number {
-        background: #e0f2fe !important;
-        color: #0c4a6e !important;
+    .application-commission {
+        color: #059669;
+        font-weight: 600;
     }
     
     .application-actions {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 0.5rem !important;
-        flex-shrink: 0 !important;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
     }
     
-    .application-btn {
-        padding: 0.625rem 1.25rem !important;
-        border-radius: 0.5rem !important;
-        font-weight: 600 !important;
-        font-size: 0.8125rem !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 0.375rem !important;
-        transition: all 0.2s ease !important;
-        text-decoration: none !important;
-        white-space: nowrap !important;
-        border: none !important;
-        cursor: pointer !important;
+    .application-view-btn {
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        transition: all 0.2s ease;
     }
     
-    .application-details-btn {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
-        color: white !important;
-        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2) !important;
-    }
-    
-    .application-details-btn:hover {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
-        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3) !important;
-        transform: translateY(-1px) !important;
+    .application-view-btn:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
     }
     
     .btn-icon {
-        width: 1rem !important;
-        height: 1rem !important;
+        width: 1rem;
+        height: 1rem;
     }
     
-    .applications-container {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 1.25rem !important;
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #9ca3af;
     }
     
-    .application-separator {
-        height: 1px !important;
-        background: linear-gradient(90deg, transparent, #e5e7eb, transparent) !important;
-        margin: 0.5rem 0 !important;
+    .empty-state-icon {
+        width: 4rem;
+        height: 4rem;
+        margin: 0 auto 1rem;
+        color: #d1d5db;
     }
-
-    @media (max-width: 768px) {
-        .application-card {
-            flex-direction: column !important;
-            gap: 1rem !important;
-        }
-        
-        .application-actions {
-            width: 100% !important;
-        }
-        
-        .application-btn {
-            width: 100% !important;
-        }
+    
+    .empty-state-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #6b7280;
+        margin-bottom: 0.375rem;
+    }
+    
+    .empty-state-description {
+        font-size: 0.875rem;
+        color: #9ca3af;
     }
 </style>
 
 @if($applications->isEmpty())
-    <div style="text-align: center; padding: 3rem 2rem; color: #9ca3af;">
-        <svg style="width: 4rem; height: 4rem; margin: 0 auto 1rem; color: #d1d5db;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    <div class="empty-state">
+        <svg class="empty-state-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
         </svg>
-        <p style="font-size: 1rem; font-weight: 600; color: #6b7280; margin-bottom: 0.375rem;">No applications submitted yet</p>
-        <p style="font-size: 0.8125rem; color: #9ca3af;">Applications will appear here when students are created with university and program selection</p>
+        <p class="empty-state-title">No applications yet</p>
+        <p class="empty-state-description">This student hasn't submitted any applications</p>
     </div>
 @else
-    <div class="applications-container">
-        @foreach($applications as $index => $application)
-            <div class="application-card" style="display: flex; align-items: flex-start; gap: 1rem;">
-                <div class="application-icon-box">
-                    <span>🎓</span>
+    <div>
+        @foreach($applications as $application)
+            <div class="application-card">
+                <div class="application-header">
+                    <div class="application-title-section">
+                        <h4 class="application-program-name">{{ $application->program->name }}</h4>
+                        <p class="application-university-name">{{ $application->program->university->name }}</p>
+                    </div>
+                    <span class="fi-badge fi-color-{{ match($application->status) {
+                        'pending' => 'warning',
+                        'submitted' => 'info',
+                        'under_review' => 'warning',
+                        'additional_documents_required' => 'danger',
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                        'enrolled' => 'success',
+                        'cancelled' => 'gray',
+                        default => 'gray'
+                    } }} fi-size-md inline-flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset">
+                        {{ ucfirst(str_replace('_', ' ', $application->status)) }}
+                    </span>
                 </div>
                 
-                <div class="application-content">
-                    <h3 class="application-title">{{ $application->program->name ?? 'Unknown Program' }}</h3>
-                    
-                    <p class="application-subtitle">{{ $application->program->university->name ?? 'Unknown University' }}</p>
-                    
-                    <div class="application-meta">
-                        <div class="application-meta-item">
-                            <svg class="application-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span>{{ $application->created_at->format('M j, Y g:i A') }}</span>
-                        </div>
-                        
-                        <span style="color: #d1d5db;">•</span>
-                        
-                        <div class="application-meta-item">
-                            <svg class="application-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
-                            <span>{{ $application->agent->name ?? 'Unknown Agent' }}</span>
-                        </div>
+                <div class="application-details-grid">
+                    <div class="application-detail-item">
+                        <span class="application-detail-label">Application #</span>
+                        <span class="application-detail-value">{{ $application->application_number }}</span>
                     </div>
-                    
-                    <div class="application-badges">
-                        @php
-                            $statusColors = [
-                                'pending' => ['bg' => '#fef3c7', 'color' => '#92400e'],
-                                'submitted' => ['bg' => '#dbeafe', 'color' => '#1e40af'],
-                                'under_review' => ['bg' => '#fef3c7', 'color' => '#92400e'],
-                                'additional_documents_required' => ['bg' => '#fecaca', 'color' => '#991b1b'],
-                                'approved' => ['bg' => '#dcfce7', 'color' => '#166534'],
-                                'rejected' => ['bg' => '#fecaca', 'color' => '#991b1b'],
-                                'enrolled' => ['bg' => '#dcfce7', 'color' => '#166534'],
-                                'cancelled' => ['bg' => '#f3f4f6', 'color' => '#374151'],
-                            ];
-                            $statusColor = $statusColors[$application->status] ?? $statusColors['pending'];
-                            $statusLabel = ucfirst(str_replace('_', ' ', $application->status));
-                        @endphp
-                        
-                        <span class="application-badge" style="background: {{ $statusColor['bg'] }} !important; color: {{ $statusColor['color'] }} !important;">
-                            {{ $statusLabel }}
-                        </span>
-                        
-                        @if($application->commission_amount)
-                            <span class="application-badge badge-commission">
-                                ${{ number_format($application->commission_amount, 2) }}
-                            </span>
-                        @endif
-                        
-                        <span class="application-badge badge-number">
-                            {{ $application->application_number }}
+                    <div class="application-detail-item">
+                        <span class="application-detail-label">Submitted</span>
+                        <span class="application-detail-value">{{ $application->created_at->format('M j, Y') }}</span>
+                    </div>
+                    <div class="application-detail-item">
+                        <span class="application-detail-label">Commission</span>
+                        <span class="application-detail-value application-commission">
+                            {{ $application->commission_amount ? '$' . number_format($application->commission_amount, 2) : 'N/A' }}
                         </span>
                     </div>
+                    @if($application->submitted_at)
+                        <div class="application-detail-item">
+                            <span class="application-detail-label">Submitted At</span>
+                            <span class="application-detail-value">{{ $application->submitted_at->format('M j, Y') }}</span>
+                        </div>
+                    @endif
                 </div>
                 
                 <div class="application-actions">
-                    <a href="{{ route('filament.agent.resources.applications.view', $application->id) }}" 
-                       class="application-btn application-details-btn">
+                    <a href="{{ $isAdmin ? route('filament.admin.resources.applications.view', $application->id) : route('filament.agent.resources.applications.view', $application->id) }}" 
+                       class="application-view-btn">
                         <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                         </svg>
-                        Application Details
+                        View Application
                     </a>
                 </div>
             </div>
-            
-            @if(!$loop->last)
-                <div class="application-separator"></div>
-            @endif
         @endforeach
     </div>
 @endif

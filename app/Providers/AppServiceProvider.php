@@ -4,9 +4,11 @@ namespace App\Providers;
 
 use App\Models\Application;
 use App\Models\Payout;
+use App\Models\ScholarshipAward;
 use App\Models\StudentDocument;
 use App\Observers\ApplicationObserver;
 use App\Observers\PayoutObserver;
+use App\Observers\ScholarshipAwardObserver;
 use App\Observers\StudentDocumentObserver;
 use Illuminate\Support\ServiceProvider;
 
@@ -28,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
         // Register observers for automatic notifications
         Application::observe(ApplicationObserver::class);
         Payout::observe(PayoutObserver::class);
+        ScholarshipAward::observe(ScholarshipAwardObserver::class);
         StudentDocument::observe(StudentDocumentObserver::class);
     }
 }

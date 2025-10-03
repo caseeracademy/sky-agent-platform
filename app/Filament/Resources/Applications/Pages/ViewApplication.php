@@ -42,7 +42,8 @@ class ViewApplication extends ViewRecord
                     ->action(function () {
                         $this->changeCommissionType('scholarship');
                     });
-            } elseif ($application->commission_type === 'scholarship') {
+            } elseif ($application->commission_type === 'scholarship' && ! $application->converted_from_scholarship) {
+                // Only show "Change to Money" if NOT converted from scholarship
                 $actions[] = Action::make('change_to_money')
                     ->label('Change to Money Commission')
                     ->icon('heroicon-o-banknotes')

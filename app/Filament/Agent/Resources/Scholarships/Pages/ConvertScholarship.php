@@ -324,6 +324,7 @@ class ConvertScholarship extends Page implements HasForms
             $this->createStudentDocuments($student);
 
             // Create FREE application (still needs admin review)
+            // IMPORTANT: Mark as converted_from_scholarship to prevent double-counting points
             $application = Application::create([
                 'application_number' => Application::generateApplicationNumber(),
                 'student_id' => $student->id,
@@ -332,6 +333,8 @@ class ConvertScholarship extends Page implements HasForms
                 'status' => 'needs_review',
                 'commission_type' => 'scholarship',
                 'commission_amount' => 0,
+                'converted_from_scholarship' => true, // Mark as converted
+                'scholarship_commission_id' => $this->scholarship->id, // Link to original scholarship
                 'needs_review' => true,
                 'submitted_at' => now(),
             ]);

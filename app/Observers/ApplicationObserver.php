@@ -175,6 +175,13 @@ class ApplicationObserver
     private function processScholarshipApplication(Application $application): void
     {
         try {
+            // CRITICAL: Skip point creation for converted scholarships
+            if ($application->converted_from_scholarship) {
+                Log::info("Application [{$application->application_number}] is a converted scholarship - skipping scholarship point creation to prevent double-counting.");
+
+                return;
+            }
+
             $simpleScholarshipService = app(\App\Services\SimpleScholarshipService::class);
             $result = $simpleScholarshipService->processApprovedApplication($application);
 

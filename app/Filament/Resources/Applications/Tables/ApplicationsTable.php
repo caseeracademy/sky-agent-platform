@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\Applications\Tables;
 
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
-use Filament\Tables\Actions\HeaderAction;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -114,7 +114,7 @@ class ApplicationsTable
                     ->button(),
             ])
             ->headerActions([
-                HeaderAction::make('export_csv')
+                Action::make('export_csv')
                     ->label('CSV')
                     ->icon('heroicon-o-document-arrow-down')
                     ->color('success')
@@ -144,7 +144,7 @@ class ApplicationsTable
                             fclose($csv);
                         }, 'applications_export_'.date('Y-m-d_His').'.csv');
                     }),
-                HeaderAction::make('export_pdf')
+                Action::make('export_pdf')
                     ->label('PDF')
                     ->icon('heroicon-o-document-text')
                     ->color('danger')
@@ -152,12 +152,14 @@ class ApplicationsTable
                         $query = $livewire->getFilteredTableQuery();
                         $applications = $query->with(['student', 'agent', 'program.university'])->get();
 
-                        $pdf = \App::make('dompdf.wrapper');
-                        $pdf->loadHTML(view('exports.applications-pdf', ['applications' => $applications])->render());
-                        $pdf->setPaper('a4', 'landscape');
+                        $html = view('exports.applications-pdf', ['applications' => $applications])->render();
+                        $dompdf = new \Dompdf\Dompdf;
+                        $dompdf->loadHtml($html);
+                        $dompdf->setPaper('A4', 'landscape');
+                        $dompdf->render();
 
-                        return response()->streamDownload(function () use ($pdf) {
-                            echo $pdf->output();
+                        return response()->streamDownload(function () use ($dompdf) {
+                            echo $dompdf->output();
                         }, 'applications_export_'.date('Y-m-d_His').'.pdf');
                     }),
             ])

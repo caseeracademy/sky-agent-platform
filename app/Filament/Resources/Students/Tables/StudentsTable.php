@@ -2,11 +2,11 @@
 
 namespace App\Filament\Resources\Students\Tables;
 
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Tables\Actions\HeaderAction;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -87,7 +87,7 @@ class StudentsTable
                 EditAction::make(),
             ])
             ->headerActions([
-                HeaderAction::make('export_csv')
+                Action::make('export_csv')
                     ->label('CSV')
                     ->icon('heroicon-o-document-arrow-down')
                     ->color('success')
@@ -120,7 +120,7 @@ class StudentsTable
                             fclose($csv);
                         }, 'students_export_'.date('Y-m-d_His').'.csv');
                     }),
-                HeaderAction::make('export_pdf')
+                Action::make('export_pdf')
                     ->label('PDF')
                     ->icon('heroicon-o-document-text')
                     ->color('danger')
@@ -128,11 +128,14 @@ class StudentsTable
                         $query = $livewire->getFilteredTableQuery();
                         $students = $query->with('agent')->get();
 
-                        $pdf = \App::make('dompdf.wrapper');
-                        $pdf->loadHTML(view('exports.students-pdf', ['students' => $students])->render());
+                        $html = view('exports.students-pdf', ['students' => $students])->render();
+                        $dompdf = new \Dompdf\Dompdf;
+                        $dompdf->loadHtml($html);
+                        $dompdf->setPaper('A4', 'portrait');
+                        $dompdf->render();
 
-                        return response()->streamDownload(function () use ($pdf) {
-                            echo $pdf->output();
+                        return response()->streamDownload(function () use ($dompdf) {
+                            echo $dompdf->output();
                         }, 'students_export_'.date('Y-m-d_His').'.pdf');
                     }),
             ])

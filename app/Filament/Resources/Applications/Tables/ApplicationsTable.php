@@ -5,7 +5,7 @@ namespace App\Filament\Resources\Applications\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
-use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\HeaderAction;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -114,7 +114,7 @@ class ApplicationsTable
                     ->button(),
             ])
             ->headerActions([
-                Action::make('export_csv')
+                HeaderAction::make('export_csv')
                     ->label('CSV')
                     ->icon('heroicon-o-document-arrow-down')
                     ->color('success')
@@ -144,7 +144,7 @@ class ApplicationsTable
                             fclose($csv);
                         }, 'applications_export_'.date('Y-m-d_His').'.csv');
                     }),
-                Action::make('export_pdf')
+                HeaderAction::make('export_pdf')
                     ->label('PDF')
                     ->icon('heroicon-o-document-text')
                     ->color('danger')

@@ -6,7 +6,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\HeaderAction;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -87,7 +87,7 @@ class StudentsTable
                 EditAction::make(),
             ])
             ->headerActions([
-                Action::make('export_csv')
+                HeaderAction::make('export_csv')
                     ->label('CSV')
                     ->icon('heroicon-o-document-arrow-down')
                     ->color('success')
@@ -120,7 +120,7 @@ class StudentsTable
                             fclose($csv);
                         }, 'students_export_'.date('Y-m-d_His').'.csv');
                     }),
-                Action::make('export_pdf')
+                HeaderAction::make('export_pdf')
                     ->label('PDF')
                     ->icon('heroicon-o-document-text')
                     ->color('danger')

@@ -12,7 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('system_settings', function (Blueprint $table) {
-            $table->dropColumn(['default_commission_rate', 'scholarship_points_per_application']);
+            // Check if columns exist before dropping
+            if (Schema::hasColumn('system_settings', 'default_commission_rate')) {
+                $table->dropColumn('default_commission_rate');
+            }
+            if (Schema::hasColumn('system_settings', 'scholarship_points_per_application')) {
+                $table->dropColumn('scholarship_points_per_application');
+            }
         });
     }
 

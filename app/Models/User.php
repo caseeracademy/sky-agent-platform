@@ -27,6 +27,10 @@ class User extends Authenticatable
         'role',
         'parent_agent_id',
         'is_active',
+        'phone_number',
+        'address',
+        'bio',
+        'avatar_path',
     ];
 
     /**

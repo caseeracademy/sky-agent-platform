@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\SystemSettings;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -13,6 +14,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Create default system settings
+        SystemSettings::firstOrCreate(
+            ['id' => 1],
+            [
+                'company_name' => 'Sky Blue Consulting',
+                'company_email' => 'info@skyblue.com',
+            ]
+        );
+
         // Add this block to create a default Super Admin
         User::firstOrCreate(
             ['email' => 'superadmin@app.com'],

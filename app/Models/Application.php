@@ -20,6 +20,7 @@ class Application extends Model
         'student_id',
         'program_id',
         'agent_id',
+        'created_by_user_id',
         'assigned_admin_id',
         'status',
         'commission_type',
@@ -163,6 +164,14 @@ class Application extends Model
     public function reviewer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /**
+     * Get the user who created the application.
+     */
+    public function createdBy(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
     }
 
     /**

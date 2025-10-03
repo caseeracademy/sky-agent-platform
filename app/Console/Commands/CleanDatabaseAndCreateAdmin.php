@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Models\SystemSettings;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 use function Laravel\Prompts\confirm;
@@ -64,7 +64,17 @@ class CleanDatabaseAndCreateAdmin extends Command
             return true;
         });
 
-        // Step 3: Seed basic data
+        // Step 3: Create default system settings
+        $this->components->task('Creating system settings', function () {
+            SystemSettings::create([
+                'company_name' => 'Sky Blue Consulting',
+                'company_email' => 'info@skyblue.com',
+            ]);
+
+            return true;
+        });
+
+        // Step 4: Seed basic data
         $this->components->task('Seeding basic data', function () {
             Artisan::call('db:seed', [
                 '--class' => 'UniversitySeeder',
@@ -76,7 +86,7 @@ class CleanDatabaseAndCreateAdmin extends Command
 
         $this->newLine();
 
-        // Step 4: Create super admin
+        // Step 5: Create super admin
         $this->components->info('Creating Super Admin User');
         $this->newLine();
 
@@ -122,7 +132,7 @@ class CleanDatabaseAndCreateAdmin extends Command
             return true;
         });
 
-        // Step 5: Create sample agent (optional)
+        // Step 6: Create sample agent (optional)
         $this->newLine();
         $createAgent = confirm(
             label: 'Create a sample agent account?',
@@ -143,7 +153,7 @@ class CleanDatabaseAndCreateAdmin extends Command
             });
         }
 
-        // Step 6: Clear caches
+        // Step 7: Clear caches
         $this->components->task('Clearing caches', function () {
             Artisan::call('optimize:clear', [], $this->output);
 

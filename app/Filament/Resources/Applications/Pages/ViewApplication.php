@@ -29,6 +29,33 @@ class ViewApplication extends ViewRecord
 
         $actions = [];
 
+        // Add commission type change actions (admin only, when commission_type is already set)
+        if (in_array($userRole, ['super_admin', 'admin_staff']) && $application->commission_type !== null) {
+            if ($application->commission_type === 'money') {
+                $actions[] = Action::make('change_to_scholarship')
+                    ->label('Change to Scholarship')
+                    ->icon('heroicon-o-academic-cap')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Change Commission Type to Scholarship?')
+                    ->modalDescription('This will change the commission type from Money Commission to Scholarship. This action can be reversed.')
+                    ->action(function () {
+                        $this->changeCommissionType('scholarship');
+                    });
+            } elseif ($application->commission_type === 'scholarship') {
+                $actions[] = Action::make('change_to_money')
+                    ->label('Change to Money Commission')
+                    ->icon('heroicon-o-banknotes')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Change Commission Type to Money?')
+                    ->modalDescription('This will change the commission type from Scholarship to Money Commission. This action can be reversed.')
+                    ->action(function () {
+                        $this->changeCommissionType('money');
+                    });
+            }
+        }
+
         foreach ($availableActions as $actionData) {
             $status = $actionData['status'];
             $label = $actionData['label'];
@@ -116,6 +143,31 @@ class ViewApplication extends ViewRecord
                                     ])
                                     ->visible(fn ($record) => $record->status === 'needs_review' && $record->commission_type === null),
 
+                                Section::make('Commission Type Management')
+                                    ->description('Change the commission type for this application (Admin Only)')
+                                    ->schema([
+                                        Placeholder::make('current_commission_type')
+                                            ->label('Current Type')
+                                            ->content(function ($record) {
+                                                $type = $record->commission_type;
+                                                if (! $type) {
+                                                    return '<span class="fi-badge fi-color-gray fi-size-md inline-flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset">Not Set</span>';
+                                                }
+                                                $color = $type === 'money' ? 'success' : 'info';
+                                                $label = $type === 'money' ? 'Money Commission' : 'Scholarship';
+
+                                                return "<span class=\"fi-badge fi-color-{$color} fi-size-md inline-flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset\">{$label}</span>";
+                                            })
+                                            ->html(),
+                                        Placeholder::make('change_type_info')
+                                            ->label('')
+                                            ->content(fn () => new \Illuminate\Support\HtmlString(
+                                                '<p class="text-sm text-gray-600">Use the "Change to Money Commission" or "Change to Scholarship" buttons in the page header to modify the commission type.</p>'
+                                            )),
+                                    ])
+                                    ->columns(2)
+                                    ->visible(fn ($record) => $record->commission_type !== null),
+
                                 // Status Actions now in header - showing current status only
                                 Section::make('Current Status')
                                     ->schema([
@@ -183,7 +235,19 @@ class ViewApplication extends ViewRecord
                                             ->html(),
                                         Placeholder::make('agent_name')
                                             ->label('Agent')
-                                            ->content(fn ($record) => $record->agent->name),
+                                            ->content(function ($record) {
+                                                $agentName = $record->agent->name;
+
+                                                // Add subtle indicator if created by admin
+                                                if ($record->created_by_user_id && $record->createdBy &&
+                                                    in_array($record->createdBy->role, ['super_admin', 'admin_staff'])) {
+                                                    return new \Illuminate\Support\HtmlString(
+                                                        $agentName.' <span class="text-xs text-gray-400 italic ml-1">(created by admin)</span>'
+                                                    );
+                                                }
+
+                                                return $agentName;
+                                            }),
                                     ])
                                     ->columns(3),
 
@@ -723,6 +787,53 @@ class ViewApplication extends ViewRecord
             Notification::make()
                 ->title('❌ Upload Failed')
                 ->body('Failed to upload offer letter: '.$e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    /**
+     * Change commission type (admin only).
+     */
+    public function changeCommissionType(string $newType): void
+    {
+        try {
+            $application = $this->getRecord();
+            $oldType = $application->commission_type;
+
+            // Update commission type
+            $application->commission_type = $newType;
+
+            // Update commission amount based on new type
+            if ($newType === 'scholarship') {
+                $application->commission_amount = 0;
+            } else {
+                $application->commission_amount = $application->program->agent_commission ?? 0;
+            }
+
+            $application->save();
+
+            // Log the change
+            \App\Models\ApplicationStatusHistory::create([
+                'application_id' => $application->id,
+                'from_status' => $application->status,
+                'to_status' => $application->status,
+                'changed_by_user_id' => auth()->id(),
+                'reason' => "Commission type changed from {$oldType} to {$newType} by admin",
+            ]);
+
+            Notification::make()
+                ->title('✅ Commission Type Changed')
+                ->body("Commission type changed from {$oldType} to {$newType}")
+                ->success()
+                ->send();
+
+            // Redirect to refresh the page
+            $this->redirect($this->getResource()::getUrl('view', ['record' => $application->id]));
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Error')
+                ->body('Failed to change commission type: '.$e->getMessage())
                 ->danger()
                 ->send();
         }

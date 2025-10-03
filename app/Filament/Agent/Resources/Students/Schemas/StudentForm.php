@@ -2,6 +2,7 @@
 
 namespace App\Filament\Agent\Resources\Students\Schemas;
 
+use App\Models\Degree;
 use App\Models\Program;
 use App\Models\University;
 use Filament\Forms\Components\DatePicker;
@@ -59,65 +60,9 @@ class StudentForm
                         Select::make('country_of_residence')
                             ->label('Country of Residence')
                             ->required()
-                            ->options([
-                                'Afghanistan' => 'Afghanistan',
-                                'Albania' => 'Albania',
-                                'Algeria' => 'Algeria',
-                                'Argentina' => 'Argentina',
-                                'Australia' => 'Australia',
-                                'Austria' => 'Austria',
-                                'Bangladesh' => 'Bangladesh',
-                                'Belgium' => 'Belgium',
-                                'Brazil' => 'Brazil',
-                                'Canada' => 'Canada',
-                                'Chile' => 'Chile',
-                                'China' => 'China',
-                                'Colombia' => 'Colombia',
-                                'Croatia' => 'Croatia',
-                                'Czech Republic' => 'Czech Republic',
-                                'Denmark' => 'Denmark',
-                                'Egypt' => 'Egypt',
-                                'Finland' => 'Finland',
-                                'France' => 'France',
-                                'Germany' => 'Germany',
-                                'Greece' => 'Greece',
-                                'India' => 'India',
-                                'Indonesia' => 'Indonesia',
-                                'Ireland' => 'Ireland',
-                                'Israel' => 'Israel',
-                                'Italy' => 'Italy',
-                                'Japan' => 'Japan',
-                                'Malaysia' => 'Malaysia',
-                                'Mexico' => 'Mexico',
-                                'Netherlands' => 'Netherlands',
-                                'New Zealand' => 'New Zealand',
-                                'Nigeria' => 'Nigeria',
-                                'Norway' => 'Norway',
-                                'Pakistan' => 'Pakistan',
-                                'Peru' => 'Peru',
-                                'Philippines' => 'Philippines',
-                                'Poland' => 'Poland',
-                                'Portugal' => 'Portugal',
-                                'Romania' => 'Romania',
-                                'Russia' => 'Russia',
-                                'Saudi Arabia' => 'Saudi Arabia',
-                                'Singapore' => 'Singapore',
-                                'South Africa' => 'South Africa',
-                                'South Korea' => 'South Korea',
-                                'Spain' => 'Spain',
-                                'Sweden' => 'Sweden',
-                                'Switzerland' => 'Switzerland',
-                                'Thailand' => 'Thailand',
-                                'Turkey' => 'Turkey',
-                                'Ukraine' => 'Ukraine',
-                                'United Arab Emirates' => 'United Arab Emirates',
-                                'United Kingdom' => 'United Kingdom',
-                                'United States' => 'United States',
-                                'Vietnam' => 'Vietnam',
-                                'Other' => 'Other',
-                            ])
-                            ->placeholder('Select country')
                             ->searchable()
+                            ->options(config('countries.countries'))
+                            ->placeholder('Select country')
                             ->columnSpan(1),
                         Select::make('gender')
                             ->label('Gender')
@@ -160,65 +105,9 @@ class StudentForm
                         Select::make('nationality')
                             ->label('Nationality')
                             ->required()
-                            ->options([
-                                'Afghan' => 'Afghan',
-                                'Albanian' => 'Albanian',
-                                'Algerian' => 'Algerian',
-                                'American' => 'American',
-                                'Argentine' => 'Argentine',
-                                'Australian' => 'Australian',
-                                'Austrian' => 'Austrian',
-                                'Bangladeshi' => 'Bangladeshi',
-                                'Belgian' => 'Belgian',
-                                'Brazilian' => 'Brazilian',
-                                'British' => 'British',
-                                'Bulgarian' => 'Bulgarian',
-                                'Canadian' => 'Canadian',
-                                'Chilean' => 'Chilean',
-                                'Chinese' => 'Chinese',
-                                'Colombian' => 'Colombian',
-                                'Croatian' => 'Croatian',
-                                'Czech' => 'Czech',
-                                'Danish' => 'Danish',
-                                'Dutch' => 'Dutch',
-                                'Egyptian' => 'Egyptian',
-                                'Finnish' => 'Finnish',
-                                'French' => 'French',
-                                'German' => 'German',
-                                'Greek' => 'Greek',
-                                'Hungarian' => 'Hungarian',
-                                'Indian' => 'Indian',
-                                'Indonesian' => 'Indonesian',
-                                'Irish' => 'Irish',
-                                'Israeli' => 'Israeli',
-                                'Italian' => 'Italian',
-                                'Japanese' => 'Japanese',
-                                'Korean' => 'Korean',
-                                'Malaysian' => 'Malaysian',
-                                'Mexican' => 'Mexican',
-                                'Nigerian' => 'Nigerian',
-                                'Norwegian' => 'Norwegian',
-                                'Pakistani' => 'Pakistani',
-                                'Peruvian' => 'Peruvian',
-                                'Philippine' => 'Philippine',
-                                'Polish' => 'Polish',
-                                'Portuguese' => 'Portuguese',
-                                'Romanian' => 'Romanian',
-                                'Russian' => 'Russian',
-                                'Saudi' => 'Saudi',
-                                'Singaporean' => 'Singaporean',
-                                'South African' => 'South African',
-                                'Spanish' => 'Spanish',
-                                'Swedish' => 'Swedish',
-                                'Swiss' => 'Swiss',
-                                'Thai' => 'Thai',
-                                'Turkish' => 'Turkish',
-                                'Ukrainian' => 'Ukrainian',
-                                'Vietnamese' => 'Vietnamese',
-                                'Other' => 'Other',
-                            ])
-                            ->placeholder('Select nationality')
-                            ->searchable(),
+                            ->searchable()
+                            ->options(array_combine(config('countries.nationalities'), config('countries.nationalities')))
+                            ->placeholder('Select nationality'),
                         DatePicker::make('date_of_birth')
                             ->label('Date of Birth')
                             ->maxDate(now()->subYears(16))
@@ -261,7 +150,7 @@ class StudentForm
 
                 // Section 3: Add to Application
                 Section::make('Add to Application')
-                    ->description('Create application for this student (optional)')
+                    ->description('Create application for this student (optional - you can also add later)')
                     ->schema([
                         Select::make('university_id')
                             ->label('University')
@@ -270,24 +159,50 @@ class StudentForm
                             ->searchable()
                             ->preload()
                             ->reactive()
-                            ->afterStateUpdated(fn (callable $set) => $set('program_id', null)),
-                        Select::make('program_id')
-                            ->label('Program')
+                            ->afterStateUpdated(function (callable $set) {
+                                $set('degree_id', null);
+                                $set('program_id', null);
+                            }),
+                        Select::make('degree_id')
+                            ->label('Degree Type')
                             ->options(function (callable $get) {
                                 $universityId = $get('university_id');
                                 if (! $universityId) {
                                     return [];
                                 }
 
-                                return Program::where('university_id', $universityId)
-                                    ->pluck('name', 'id');
+                                // Get degrees that have programs in this university
+                                return Degree::whereHas('programs', function ($query) use ($universityId) {
+                                    $query->where('university_id', $universityId);
+                                })->pluck('name', 'id');
                             })
-                            ->placeholder('Select program (optional)')
+                            ->placeholder('Select degree type')
                             ->searchable()
                             ->preload()
-                            ->disabled(fn (callable $get) => ! $get('university_id')),
+                            ->reactive()
+                            ->disabled(fn (callable $get) => ! $get('university_id'))
+                            ->afterStateUpdated(fn (callable $set) => $set('program_id', null)),
+                        Select::make('program_id')
+                            ->label('Program')
+                            ->options(function (callable $get) {
+                                $universityId = $get('university_id');
+                                $degreeId = $get('degree_id');
+
+                                if (! $universityId || ! $degreeId) {
+                                    return [];
+                                }
+
+                                return Program::where('university_id', $universityId)
+                                    ->where('degree_id', $degreeId)
+                                    ->pluck('name', 'id');
+                            })
+                            ->placeholder('Select program')
+                            ->searchable()
+                            ->preload()
+                            ->disabled(fn (callable $get) => ! $get('university_id') || ! $get('degree_id')),
                     ])
-                    ->columns(1),
+                    ->columns(1)
+                    ->collapsible(),
             ]);
     }
 }

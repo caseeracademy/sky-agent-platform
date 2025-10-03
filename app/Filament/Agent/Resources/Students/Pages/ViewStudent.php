@@ -3,8 +3,18 @@
 namespace App\Filament\Agent\Resources\Students\Pages;
 
 use App\Filament\Agent\Resources\Students\StudentResource;
+use App\Models\Application;
+use App\Models\ApplicationDocument;
+use App\Models\Degree;
+use App\Models\Program;
+use App\Models\University;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
@@ -246,6 +256,109 @@ class ViewStudent extends ViewRecord
     {
         return [
             EditAction::make(),
+
+            Action::make('create_application')
+                ->label('Create Application')
+                ->icon('heroicon-o-document-plus')
+                ->color('success')
+                ->visible(fn ($record) => $record->applications()->count() === 0)
+                ->form([
+                    Select::make('university_id')
+                        ->label('University')
+                        ->required()
+                        ->searchable()
+                        ->preload()
+                        ->options(University::all()->pluck('name', 'id'))
+                        ->reactive()
+                        ->afterStateUpdated(function (callable $set) {
+                            $set('degree_id', null);
+                            $set('program_id', null);
+                        }),
+                    Select::make('degree_id')
+                        ->label('Degree Type')
+                        ->required()
+                        ->searchable()
+                        ->preload()
+                        ->options(function (callable $get) {
+                            $universityId = $get('university_id');
+                            if (! $universityId) {
+                                return [];
+                            }
+
+                            // Get degrees that have programs in this university
+                            return Degree::whereHas('programs', function ($query) use ($universityId) {
+                                $query->where('university_id', $universityId);
+                            })->pluck('name', 'id');
+                        })
+                        ->reactive()
+                        ->disabled(fn (callable $get) => ! $get('university_id'))
+                        ->afterStateUpdated(fn (callable $set) => $set('program_id', null)),
+                    Select::make('program_id')
+                        ->label('Program')
+                        ->required()
+                        ->searchable()
+                        ->preload()
+                        ->options(function (callable $get) {
+                            $universityId = $get('university_id');
+                            $degreeId = $get('degree_id');
+
+                            if (! $universityId || ! $degreeId) {
+                                return [];
+                            }
+
+                            return Program::where('university_id', $universityId)
+                                ->where('degree_id', $degreeId)
+                                ->pluck('name', 'id');
+                        })
+                        ->disabled(fn (callable $get) => ! $get('university_id') || ! $get('degree_id')),
+                    DatePicker::make('intake_date')
+                        ->label('Preferred Intake Date')
+                        ->minDate(now()),
+                    Textarea::make('notes')
+                        ->label('Additional Notes')
+                        ->placeholder('Any additional information about the application...')
+                        ->rows(3),
+                ])
+                ->action(function (array $data, $record) {
+                    // Create the application
+                    $application = Application::create([
+                        'student_id' => $record->id,
+                        'program_id' => $data['program_id'],
+                        'agent_id' => auth()->id(),
+                        'status' => 'needs_review',
+                        'commission_type' => null,
+                        'needs_review' => true,
+                        'submitted_at' => now(),
+                        'intake_date' => $data['intake_date'] ?? null,
+                        'notes' => $data['notes'] ?? null,
+                    ]);
+
+                    // Copy student documents to application documents
+                    $studentDocuments = $record->documents()->get();
+                    foreach ($studentDocuments as $doc) {
+                        ApplicationDocument::create([
+                            'application_id' => $application->id,
+                            'uploaded_by_user_id' => auth()->id(),
+                            'title' => $doc->name,
+                            'original_filename' => $doc->file_name,
+                            'disk' => 'public',
+                            'path' => $doc->file_path,
+                            'file_size' => $doc->file_size,
+                            'mime_type' => $doc->mime_type,
+                        ]);
+                    }
+
+                    Notification::make()
+                        ->title('Application Created Successfully')
+                        ->success()
+                        ->body("Application {$application->application_number} has been created for {$record->name}")
+                        ->send();
+
+                    // Redirect to the application view
+                    return redirect()->to(
+                        \App\Filament\Agent\Resources\Applications\ApplicationResource::getUrl('view', ['record' => $application->id])
+                    );
+                }),
         ];
     }
 }

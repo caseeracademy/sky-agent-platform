@@ -99,8 +99,9 @@ class CreateStudent extends CreateRecord
 
     protected function createApplication($student, $fileData, $applicationData): void
     {
+        // Do NOT manually set application_number - let the Model handle it via booted() event
+        // This prevents race conditions when multiple agents create students simultaneously
         $application = Application::create([
-            'application_number' => 'APP-'.str_pad(Application::count() + 1, 6, '0', STR_PAD_LEFT),
             'student_id' => $student->id,
             'program_id' => $applicationData['program_id'],
             'agent_id' => auth()->id(),

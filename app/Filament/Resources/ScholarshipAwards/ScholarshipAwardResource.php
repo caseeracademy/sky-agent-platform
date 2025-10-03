@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\ScholarshipAwards;
 
 use App\Enums\AdminNavigationGroup;
-use App\Filament\Resources\ScholarshipAwards\Pages\CreateScholarshipAward;
 use App\Filament\Resources\ScholarshipAwards\Pages\EditScholarshipAward;
 use App\Filament\Resources\ScholarshipAwards\Pages\ListScholarshipAwards;
 use App\Filament\Resources\ScholarshipAwards\Schemas\ScholarshipAwardForm;
@@ -27,9 +26,9 @@ class ScholarshipAwardResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
 
-    protected static string|\UnitEnum|null $navigationGroup = AdminNavigationGroup::SystemSetup;
+    protected static string|\UnitEnum|null $navigationGroup = AdminNavigationGroup::ScholarshipManagement;
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {
@@ -52,8 +51,15 @@ class ScholarshipAwardResource extends Resource
     {
         return [
             'index' => ListScholarshipAwards::route('/'),
-            'create' => CreateScholarshipAward::route('/create'),
             'edit' => EditScholarshipAward::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Disable creation - scholarships are automatically earned
+     */
+    public static function canCreate(): bool
+    {
+        return false;
     }
 }

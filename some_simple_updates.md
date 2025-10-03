@@ -1,0 +1,4 @@
+i want to do these sipmle changes.
+
+1. we need to allow admins to create students with applications but add a dropdown with search that allows them to select and agent associated with that student and application, after the admin selects agent and creates the student and application, this student and application will be owned by that agent it will be like he created it (if we can add something that tells this was originaly created by super admin will be good but make it subtle)
+2. also i want if the super admin changes the initial status let's say he made the application as scholarship by accident we need to be able to change that, only admin can do that. 

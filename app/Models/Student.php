@@ -18,6 +18,7 @@ class Student extends Model
      */
     protected $fillable = [
         'agent_id',
+        'created_by_user_id',
         'name', // Keep for backward compatibility
         'first_name',
         'middle_name',
@@ -52,6 +53,14 @@ class Student extends Model
     public function agent(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'agent_id');
+    }
+
+    /**
+     * Get the user who created the student.
+     */
+    public function createdBy(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
     }
 
     /**

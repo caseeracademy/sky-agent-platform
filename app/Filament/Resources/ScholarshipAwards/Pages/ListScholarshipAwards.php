@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\ScholarshipAwards\Pages;
 
 use App\Filament\Resources\ScholarshipAwards\ScholarshipAwardResource;
-use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListScholarshipAwards extends ListRecords
@@ -13,7 +12,7 @@ class ListScholarshipAwards extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            // Create action removed - scholarships are automatically earned by agents
         ];
     }
 }

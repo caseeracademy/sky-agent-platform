@@ -287,6 +287,63 @@ class ViewApplication extends ViewRecord
                                     ])
                                     ->columns(2)
                                     ->collapsible(),
+
+                                // Payment Receipt Section (visible when payment proof uploaded)
+                                Section::make('💰 Payment Receipt Uploaded')
+                                    ->description('The agent has uploaded proof of payment')
+                                    ->schema([
+                                        Placeholder::make('payment_receipt_info')
+                                            ->label('')
+                                            ->content(function ($record) {
+                                                // Find payment receipt document
+                                                $receiptDoc = $record->applicationDocuments()
+                                                    ->where('title', 'Payment Receipt')
+                                                    ->orderBy('created_at', 'desc')
+                                                    ->first();
+
+                                                if (! $receiptDoc) {
+                                                    return 'No receipt found';
+                                                }
+
+                                                $uploadedBy = $receiptDoc->uploadedBy->name ?? 'Unknown';
+                                                $uploadedAt = $receiptDoc->created_at->format('M j, Y g:i A');
+                                                $fileSize = number_format($receiptDoc->file_size / 1024, 2).' KB';
+                                                $downloadUrl = \Storage::disk('public')->url($receiptDoc->path);
+
+                                                return new \Illuminate\Support\HtmlString("
+                                                    <div class='bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-6'>
+                                                        <div class='flex items-start justify-between'>
+                                                            <div class='flex-1'>
+                                                                <h3 class='text-lg font-bold text-green-800 mb-3'>📄 Payment Receipt Available</h3>
+                                                                <div class='space-y-2 text-sm text-gray-700'>
+                                                                    <p><strong>File:</strong> {$receiptDoc->original_filename}</p>
+                                                                    <p><strong>Uploaded by:</strong> {$uploadedBy}</p>
+                                                                    <p><strong>Uploaded at:</strong> {$uploadedAt}</p>
+                                                                    <p><strong>Size:</strong> {$fileSize}</p>
+                                                                </div>
+                                                            </div>
+                                                            <div class='ml-4'>
+                                                                <a href='{$downloadUrl}' 
+                                                                   target='_blank'
+                                                                   class='inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200'>
+                                                                    <svg class='w-5 h-5 mr-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                                                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'></path>
+                                                                    </svg>
+                                                                    Download Receipt
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                        <div class='mt-4 p-3 bg-blue-50 border border-blue-200 rounded'>
+                                                            <p class='text-sm text-blue-800'>
+                                                                <strong>Next Step:</strong> Review the payment receipt and use the status buttons above to approve or request additional information.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ");
+                                            }),
+                                    ])
+                                    ->visible(fn ($record) => $record->status === 'payment_approval' && $record->applicationDocuments()->where('title', 'Payment Receipt')->exists())
+                                    ->collapsible(),
                             ]),
 
                         Tab::make('Student Information')

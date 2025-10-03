@@ -2,13 +2,11 @@
 
 namespace App\Filament\Resources\Students\Tables;
 
-use App\Filament\Exports\StudentExporter;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ExportAction;
-use Filament\Actions\ExportBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -89,15 +87,57 @@ class StudentsTable
                 EditAction::make(),
             ])
             ->headerActions([
-                ExportAction::make()
-                    ->exporter(StudentExporter::class)
-                    ->label('Export Students')
-                    ->color('success'),
+                Action::make('export_csv')
+                    ->label('CSV')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->action(function ($livewire) {
+                        $query = $livewire->getFilteredTableQuery();
+
+                        return response()->streamDownload(function () use ($query) {
+                            $students = $query->with('agent')->get();
+                            $csv = fopen('php://output', 'w');
+
+                            // Headers
+                            fputcsv($csv, ['ID', 'Name', 'Email', 'Phone', 'Passport', 'Nationality', 'Country', 'Agent', 'Applications', 'Created At']);
+
+                            // Data
+                            foreach ($students as $student) {
+                                fputcsv($csv, [
+                                    $student->id,
+                                    $student->name,
+                                    $student->email,
+                                    $student->phone_number ?? $student->phone,
+                                    $student->passport_number,
+                                    $student->nationality,
+                                    $student->country_of_residence,
+                                    $student->agent->name ?? 'N/A',
+                                    $student->applications()->count(),
+                                    $student->created_at->format('Y-m-d H:i'),
+                                ]);
+                            }
+
+                            fclose($csv);
+                        }, 'students_export_'.date('Y-m-d_His').'.csv');
+                    }),
+                Action::make('export_pdf')
+                    ->label('PDF')
+                    ->icon('heroicon-o-document-text')
+                    ->color('danger')
+                    ->action(function ($livewire) {
+                        $query = $livewire->getFilteredTableQuery();
+                        $students = $query->with('agent')->get();
+
+                        $pdf = \App::make('dompdf.wrapper');
+                        $pdf->loadHTML(view('exports.students-pdf', ['students' => $students])->render());
+
+                        return response()->streamDownload(function () use ($pdf) {
+                            echo $pdf->output();
+                        }, 'students_export_'.date('Y-m-d_His').'.pdf');
+                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    ExportBulkAction::make()
-                        ->exporter(StudentExporter::class),
                     DeleteBulkAction::make(),
                 ]),
             ])

@@ -73,6 +73,16 @@ class ApplicationForm
                             }
                         }
                     }),
+                Select::make('language')
+                    ->label('Language')
+                    ->required()
+                    ->default('english')
+                    ->options([
+                        'turkish' => 'Turkish',
+                        'english' => 'English',
+                        'arabic' => 'Arabic',
+                    ])
+                    ->searchable(),
                 DatePicker::make('intake_date')
                     ->label('Preferred Intake Date')
                     ->minDate(now()),

@@ -36,7 +36,7 @@ class StudentForm
                             ->placeholder('e.g., John')
                             ->columnSpan(1),
                         TextInput::make('last_name')
-                            ->label('Surname')
+                            ->label('Last Name')
                             ->required()
                             ->maxLength(255)
                             ->placeholder('e.g., Smith')
@@ -110,6 +110,7 @@ class StudentForm
                             ->placeholder('Select nationality'),
                         DatePicker::make('date_of_birth')
                             ->label('Date of Birth')
+                            ->required()
                             ->maxDate(now()->subYears(16))
                             ->placeholder('Select date of birth')
                             ->displayFormat('Y-m-d')

@@ -1,0 +1,253 @@
+/* Laravel Filament Icon Size Fix */
+/* This file fixes the large icons issue in Filament */
+
+/* Global icon size fixes */
+.fi-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+.fi-icon-lg {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+}
+
+.fi-icon-sm {
+    width: 1rem !important;
+    height: 1rem !important;
+}
+
+.fi-icon-xs {
+    width: 0.75rem !important;
+    height: 0.75rem !important;
+}
+
+/* Table icon column fixes */
+.fi-ta-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Form field icon fixes */
+.fi-fo-field-wrapper-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Navigation icon fixes */
+.fi-sidebar-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Topbar icon fixes */
+.fi-topbar-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Action icon fixes */
+.fi-ac-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Widget icon fixes */
+.fi-wi-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Info list icon fixes */
+.fi-in-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Heroicons specific fixes */
+.heroicon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+.heroicon-lg {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+}
+
+.heroicon-sm {
+    width: 1rem !important;
+    height: 1rem !important;
+}
+
+/* Blade icon fixes */
+.blade-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Specific component overrides */
+.fi-ta-icon-column {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+.fi-ta-icon-column-lg {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+}
+
+.fi-ta-icon-column-sm {
+    width: 1rem !important;
+    height: 1rem !important;
+}
+
+/* Form input icon fixes */
+.fi-fo-field-wrapper-icon-wrapper {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Status indicator icon fixes */
+.fi-status-indicator-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Badge icon fixes */
+.fi-badge-icon {
+    width: 1rem !important;
+    height: 1rem !important;
+}
+
+/* Button icon fixes */
+.fi-btn-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+.fi-btn-icon-sm {
+    width: 1rem !important;
+    height: 1rem !important;
+}
+
+.fi-btn-icon-lg {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+}
+
+/* Modal icon fixes */
+.fi-modal-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Notification icon fixes */
+.fi-notification-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Global SVG icon size fixes */
+svg[class*="fi-icon"] {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Override any oversized icons */
+.fi-icon[style*="width"] {
+    width: 1.25rem !important;
+}
+
+.fi-icon[style*="height"] {
+    height: 1.25rem !important;
+}
+
+/* Fix for icons in tables specifically */
+.fi-ta-icon-column svg {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Fix for form icons */
+.fi-fo-field-wrapper-icon svg {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Fix for sidebar icons */
+.fi-sidebar-icon svg {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Fix for topbar icons */
+.fi-topbar-icon svg {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Fix for action icons */
+.fi-ac-icon svg {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Responsive icon sizes */
+@media (max-width: 768px) {
+    .fi-icon {
+        width: 1rem !important;
+        height: 1rem !important;
+    }
+    
+    .fi-icon-lg {
+        width: 1.25rem !important;
+        height: 1.25rem !important;
+    }
+    
+    .fi-ta-icon {
+        width: 1rem !important;
+        height: 1rem !important;
+    }
+    
+    .fi-fo-field-wrapper-icon {
+        width: 1rem !important;
+        height: 1rem !important;
+    }
+    
+    .fi-sidebar-icon {
+        width: 1rem !important;
+        height: 1rem !important;
+    }
+}
+
+/* Dark mode compatibility */
+.dark .fi-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+.dark .fi-ta-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+.dark .fi-fo-field-wrapper-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+.dark .fi-sidebar-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+.dark .fi-topbar-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+.dark .fi-ac-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}

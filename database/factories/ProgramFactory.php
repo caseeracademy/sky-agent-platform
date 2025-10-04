@@ -41,7 +41,7 @@ class ProgramFactory extends Factory
             'tuition_fee' => $tuitionFee,
             'agent_commission' => $agentCommission,
             'system_commission' => $systemCommission,
-            'degree_type' => fake()->randomElement(['Certificate', 'Diploma', 'Bachelor', 'Master', 'PhD']),
+            'degree_type' => fake()->randomElement(['Bachelor', 'Master with Thesis', 'Master without Thesis', 'Diploma', 'PhD']),
             'is_active' => true,
         ];
     }

@@ -16,6 +16,9 @@ class University extends Model
      */
     protected $fillable = [
         'name',
+        'university_type',
+        'country',
+        'city',
         'location',
         'is_active',
         'scholarship_requirements',

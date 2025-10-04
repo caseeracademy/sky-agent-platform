@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Universities\Schemas;
 
+use App\Helpers\CountriesHelper;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -21,14 +22,39 @@ class UniversityForm
                             ->required()
                             ->maxLength(255)
                             ->unique(ignoreRecord: true),
-                        TextInput::make('location')
-                            ->maxLength(255)
+                        Select::make('university_type')
+                            ->label('University Type')
+                            ->required()
+                            ->options([
+                                'public' => 'Public',
+                                'private' => 'Private',
+                            ])
+                            ->default('public'),
+                        Select::make('country')
+                            ->label('Country')
+                            ->required()
+                            ->options(CountriesHelper::getCountries())
+                            ->default('Turkey')
+                            ->reactive()
+                            ->afterStateUpdated(fn (callable $set) => $set('city', null)),
+                        Select::make('city')
+                            ->label('City')
+                            ->options(function (callable $get) {
+                                $country = $get('country');
+                                if (! $country) {
+                                    return CountriesHelper::getCitiesForCountry('Turkey');
+                                }
+
+                                return CountriesHelper::getCitiesForCountry($country);
+                            })
+                            ->searchable()
                             ->nullable()
-                            ->placeholder('e.g., Toronto, Canada'),
+                            ->default('İstanbul'),
                         Toggle::make('is_active')
                             ->label('Active')
                             ->default(true),
-                    ]),
+                    ])
+                    ->columns(2),
 
                 Section::make('Scholarship Requirements')
                     ->description('Set scholarship thresholds for the university contract and agent rewards')

@@ -19,6 +19,7 @@ class Application extends Model
         'application_number',
         'student_id',
         'program_id',
+        'language',
         'agent_id',
         'created_by_user_id',
         'assigned_admin_id',

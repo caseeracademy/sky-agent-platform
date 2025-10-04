@@ -6,6 +6,7 @@ use App\Enums\AdminNavigationGroup;
 use App\Filament\Resources\Universities\Pages\CreateUniversity;
 use App\Filament\Resources\Universities\Pages\EditUniversity;
 use App\Filament\Resources\Universities\Pages\ListUniversities;
+use App\Filament\Resources\Universities\Pages\ViewUniversity;
 use App\Filament\Resources\Universities\Schemas\UniversityForm;
 use App\Filament\Resources\Universities\Tables\UniversitiesTable;
 use App\Models\University;
@@ -47,6 +48,7 @@ class UniversityResource extends Resource
         return [
             'index' => ListUniversities::route('/'),
             'create' => CreateUniversity::route('/create'),
+            'view' => ViewUniversity::route('/{record}'),
             'edit' => EditUniversity::route('/{record}/edit'),
         ];
     }

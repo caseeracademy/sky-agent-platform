@@ -30,13 +30,13 @@ class StudentForm
                     ->schema([
                         // Row 1: Name fields (First Name, Surname) - fills 2 of 3 columns
                         TextInput::make('first_name')
-                            ->label('First Name')
+                            ->label('Student Name')
                             ->required()
                             ->maxLength(255)
                             ->placeholder('e.g., John')
                             ->columnSpan(1),
                         TextInput::make('last_name')
-                            ->label('Last Name')
+                            ->label('Father\'s Name')
                             ->required()
                             ->maxLength(255)
                             ->placeholder('e.g., Smith')

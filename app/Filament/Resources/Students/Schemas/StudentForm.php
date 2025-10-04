@@ -37,13 +37,13 @@ class StudentForm
                             ->helperText('Select agent')
                             ->columnSpan(1),
                         TextInput::make('first_name')
-                            ->label('First Name')
+                            ->label('Student Name')
                             ->required()
                             ->maxLength(255)
                             ->placeholder('e.g., John')
                             ->columnSpan(1),
                         TextInput::make('last_name')
-                            ->label('Last Name')
+                            ->label('Father\'s Name')
                             ->required()
                             ->maxLength(255)
                             ->placeholder('e.g., Smith')
